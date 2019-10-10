@@ -1,0 +1,195 @@
+apply plugin: 'java'
+apply plugin: 'license'
+apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
+
+def generatedSrcName = "generated-src"
+def generatedSrc = "$buildDir/$generatedSrcName"
+def validationXsdPath = projectDir.toString() + '/src/main/resources/sbe.xsd'
+
+sourceCompatibility = 1.8
+group 'org.tools4j'
+version '1.0-SNAPSHOT'
+archivesBaseName = "tools4j-sbe"
+
+repositories {
+    mavenCentral()
+}
+
+buildscript {
+	repositories {
+		mavenCentral()
+		jcenter()
+	}
+	
+	dependencies {
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.11.0"
+        classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.2"
+	}
+}
+
+configurations {
+    sbeTool
+}
+
+dependencies {
+    compile 'org.agrona:agrona:1.0.8'
+    sbeTool 'uk.co.real-logic:sbe-tool:1.13.3'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.hdrhistogram:HdrHistogram:2.1.9'
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'build/repositories'
+       }
+    }
+}
+
+task copyLicense(type: Copy) {
+    from('.')
+    into('build/resources/main/')
+    include('LICENSE.md')
+    rename('LICENSE.md', 'LICENSE.txt')
+}
+
+task copyLicenseToSrc(type: Copy) {
+    from('build/resources/main/')
+    into(generatedSrc)
+    include('LICENSE.txt')
+}
+
+sourceSets.main.java {
+    srcDirs generatedSrc, 'src/main/java'
+}
+sourceSets.main.resources {
+    exclude '**/*.template'
+}
+
+task generateCodecs(type: JavaExec) {
+    main = 'uk.co.real_logic.sbe.SbeTool'
+    classpath = configurations.sbeTool
+    systemProperties(
+            'sbe.output.dir': 'build/generated-src',
+            'sbe.target.language': 'Java',
+            'sbe.java.generate.interfaces': 'true',
+            'sbe.decode.unknown.enum.values': 'true',
+            'sbe.validation.stop.on.error': 'true',
+            'sbe.xinclude.aware': 'true',
+            'sbe.validation.xsd': validationXsdPath)
+    args = ['src/test/resources/example-schema.xml']
+}
+
+license {
+    header rootProject.file('src/main/resources/LICENSE.template')
+    strictCheck true
+	include "**/*.java"
+	ext.year = Calendar.getInstance().get(Calendar.YEAR)
+}
+
+copyLicense.dependsOn processResources
+copyLicenseToSrc.dependsOn copyLicense
+compileJava.dependsOn generateCodecs,licenseFormat,copyLicense,copyLicenseToSrc
+
+javadoc {
+	options.showFromPackage()
+	options.linkSource()
+	options.links("http://docs.oracle.com/javase/8/docs/api/")
+	options.windowTitle("${archivesBaseName} API ${version}")
+           .docTitle("${archivesBaseName} API ${version}")
+	options.overview = "src/main/resources/overview.html"
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+//snapshot first, then release:
+//gradle clean uploadArchives -Pupload -PossrhUsername=xxx -PossrhPassword=xxx
+if (project.hasProperty('upload')) {
+
+    allprojects {
+        apply plugin: 'signing'
+        apply plugin: 'maven'
+        apply plugin: 'io.codearte.nexus-staging'
+
+        // Signature of artifacts
+        signing {
+            sign configurations.archives
+        }
+
+        // OSSRH publication
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    beforeDeployment {
+                        MavenDeployment deployment -> signing.signPom(deployment)
+                    }
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: ossrhUsername, password: ossrhPassword)
+                    }
+                    snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                        authentication(userName: ossrhUsername, password: ossrhPassword)
+                    }
+
+                    pom.project {
+                        name "${archivesBaseName}"
+                        packaging 'jar'
+                        // optionally artifactId can be defined here
+                        description 'A user friendly implementation of the simple binary encoding standard.'
+                        url 'https://github.com/tools4j/tools4j-sbe'
+
+                        scm {
+                            connection 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
+                            developerConnection 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
+                            url 'https://github.com/tools4j/tools4j-sbe.git'
+                        }
+                        licenses {
+                            license {
+                                name 'MIT License'
+                                url 'http://opensource.org/licenses/MIT'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id 'terzerm'
+                                name 'Marco Terzer'
+                            }
+                            developer {
+                                id 'anton-anufriev'
+                                name 'Anton Anufriev'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        nexusStaging {
+            username = ossrhUsername
+            password = ossrhPassword
+        }
+    }
+}
