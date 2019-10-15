@@ -25,27 +25,39 @@ package org.tools4j.sbe.core;
 
 import org.agrona.MutableDirectBuffer;
 
-public interface ExecRptEncoder {
-    Block<ExecRptView> wrap(MutableDirectBuffer buffer, int offset);
-    <V extends DirectView> Block<V> wrap(MutableDirectBuffer buffer, int offset, V view);
+public interface ExecRptEncoder<P> extends AutoCloseable {
+    Block<P> wrap(MutableDirectBuffer buffer, int offset);
+    Block<P> wrapAndApplyHeader(MutableDirectBuffer buffer, int offset);
+    void unwrap();
 
-    interface  Block<T> {
-        Block<T> symbol(String symbol);
-        Leg<T> legStart(int count);
-        RejectText<T> legEmpty();
+    default void close() {
+        unwrap();
     }
-    interface Leg<T> {
-        Leg<T> settlDate(String settlDate);
-        Leg<T> quantity(double amount);
-        Leg<T> price(double price);
-        Leg<T> next();
-        RejectText<T> legComplete();
+
+    static ExecRptEncoder<StandardPayloadAccess> create() {
+        return create(new DefaultStandardPayloadAccess());
     }
-    interface RejectText<T> {
-        T rejectText(String text);
-        T rejectText(CharSequence text);
+
+    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
+        return new DefaultExecRptEncoder<>(payloadAccessProvider);
     }
-    interface ExecRptView extends EncodedView {
-        ExecRptEncoder unwrap();
+
+    interface Block<P> {
+        Block<P> symbol(String symbol);
+        LegGroup<P> legGroupStart(int count);
+        RejectText<P> legGroupEmpty();
+    }
+    interface LegGroup<P> {
+        Leg<P> next();
+        RejectText<P> legGroupComplete();
+    }
+    interface Leg<P> extends LegGroup<P> {
+        Leg<P> settlDate(String settlDate);
+        Leg<P> quantity(long quantity);
+        Leg<P> price(double price);
+    }
+    interface RejectText<P> {
+        P rejectText(String text);
+        P rejectText(CharSequence text);
     }
 }

@@ -23,12 +23,19 @@
  */
 package org.tools4j.sbe.core;
 
-import org.agrona.MutableDirectBuffer;
+import org.agrona.DirectBuffer;
 
-public interface EncodedView extends DirectView {
+public interface StandardPayloadAccess extends AutoCloseable {
     int offset();
-    MutableDirectBuffer buffer();
+    DirectBuffer buffer();
     int headerLength();
     int messageLength();
     int totalLength();
+
+    @Override
+    void close();
+
+    static PayloadAccessProvider<StandardPayloadAccess> provider() {
+        return new DefaultStandardPayloadAccess();
+    }
 }

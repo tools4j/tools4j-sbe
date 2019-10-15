@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   xmlns:xi="http://www.w3.org/2001/XInclude"
+                   package="trading"
+                   id="1"
+                   version="0"
+                   semanticVersion="4.4"
+                   description="Example trading schema">
+    <xi:include href="common-types.xml"/>
+    <types>
+        <type name="Symbol" primitiveType="char" length="6" characterEncoding="ASCII"/>
+        <type name="LocalMktDate" primitiveType="char" length="8" characterEncoding="ASCII"/>
+        <type name="Qty" primitiveType="int64"/>
+        <type name="Price" primitiveType="double"/>
+    </types>
+    <sbe:message name="ExecRpt" id="8" description="Execution Report">
+        <field name="symbol" id="55" type="Symbol" semanticType="Symbol"/>
+        <group name="legs" id="555" semanticType="NoLegs">
+            <field name="settlDate" id="555" type="LocalMktDate" semanticType="LegSettlDate"/>
+            <field name="quantity" id="687" type="Qty" semanticType="LegQty"/>
+            <field name="price" id="566" type="Price" semanticType="LegPrice"/>
+        </group>
+        <data name="rejectText" id="103" type="varStringEncoding" semanticType="OrdRejReason"/>
+    </sbe:message>
+</sbe:messageSchema>

@@ -79,7 +79,7 @@ task generateCodecs(type: JavaExec) {
             'sbe.validation.stop.on.error': 'true',
             'sbe.xinclude.aware': 'true',
             'sbe.validation.xsd': validationXsdPath)
-    args = ['src/test/resources/example-schema.xml']
+    args = ['src/test/resources/example-schema.xml', 'src/test/resources/trading-schema.xml']
 }
 
 license {

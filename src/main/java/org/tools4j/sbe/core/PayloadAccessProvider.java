@@ -23,21 +23,22 @@
  */
 package org.tools4j.sbe.core;
 
-import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.CompositeEncoderFlyweight;
+import org.agrona.sbe.MessageEncoderFlyweight;
 
-public interface EncoderSupplier<T> {
-    ExecRptEncoder.Block<T> execRpt();
-
-    static EncoderSupplier<StandardPayloadAccess> supplier(final MutableDirectBuffer buffer,
-                                                           final int offset) {
-        final ExecRptEncoder<StandardPayloadAccess> encoder = ExecRptEncoder.create();
-        return () -> encoder.wrapAndApplyHeader(buffer, offset);
-    }
-
-    static <P> EncoderSupplier<P> supplier(final MutableDirectBuffer buffer,
-                                           final int offset,
-                                           final PayloadAccessProvider<P> pap) {
-        final ExecRptEncoder<P> encoder = ExecRptEncoder.create(pap);
-        return () -> encoder.wrapAndApplyHeader(buffer, offset);
-    }
+/**
+ * Provides access to the payload after encoding an SBE message.
+ *
+ * @param <P> Access to the SBE payload
+ */
+@FunctionalInterface
+public interface PayloadAccessProvider<P> {
+    /**
+     * Returns access to the SBE payload after encoding SBE message.
+     *
+     * @param header the header encoder if any, or null if no header was applied
+     * @param message the message encoder
+     * @return the payload access object
+     */
+    P payload(CompositeEncoderFlyweight header, MessageEncoderFlyweight message);
 }
