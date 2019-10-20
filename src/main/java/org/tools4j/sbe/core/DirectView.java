@@ -25,8 +25,7 @@ package org.tools4j.sbe.core;
 
 import org.agrona.DirectBuffer;
 
-import java.nio.ByteBuffer;
-
+@FunctionalInterface
 public interface DirectView {
     /**
      * Attach a view to a {@link DirectBuffer} for providing direct access.
@@ -36,20 +35,4 @@ public interface DirectView {
      * @param length of the buffer included in the view.
      */
     void wrap(DirectBuffer buffer, int offset, int length);
-
-    /**
-     * Get the underlying {@link DirectBuffer} if one exists.
-     *
-     * @return the underlying {@link DirectBuffer} if one exists.
-     */
-    DirectBuffer buffer();
-
-    int offset();
-
-    /**
-     * Get the capacity of the underlying buffer.
-     *
-     * @return the capacity of the underlying buffer in bytes.
-     */
-    int capacity();
 }

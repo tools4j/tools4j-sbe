@@ -24,54 +24,22 @@
 package org.tools4j.sbe.core;
 
 import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.MessageEncoderFlyweight;
 
-public interface StandardPayloadAccess extends AutoCloseable {
+public interface MessageEncoder<E extends MessageEncoder<E>> extends MessageEncoderFlyweight, AutoCloseable {
     /**
-     * The SBE Schema identifier containing the message declaration.
+     * Wrap a buffer for encoding at a given offset.
      *
-     * @return the SBE Schema identifier containing the message declaration.
+     * @param buffer to be wrapped and into which the type will be encoded.
+     * @param offset at which the encoded object will be begin.
+     * @return the encoder for the block part of the message
      */
-    int sbeSchemaId();
-
-    /**
-     * The version number of the SBE Schema containing the message.
-     *
-     * @return the version number of the SBE Schema containing the message.
-     */
-    int sbeSchemaVersion();
-
-    /**
-     * The SBE template identifier for the message.
-     *
-     * @return the SBE template identifier for the message.
-     */
-    int sbeTemplateId();
-
-    /**
-     * The semantic type of the message which is typically the semantic equivalent in the FIX repository.
-     *
-     * @return the semantic type of the message which is typically the semantic equivalent in the FIX repository.
-     */
-    String sbeSemanticType();
-
-    /**
-     * The length of the root block in bytes.
-     *
-     * @return the length of the root block in bytes.
-     */
-    int sbeBlockLength();
-
-    MutableDirectBuffer buffer();
-
-    int offset();
-    int headerLength();
-    int messageLength();
-    int totalLength();
+    E wrap(MutableDirectBuffer buffer, int offset);
+    E wrapAndApplyHeader(MutableDirectBuffer buffer, int offset);
+    E unwrap();
 
     @Override
-    void close();
-
-    static PayloadAccessProvider<StandardPayloadAccess> provider() {
-        return new DefaultStandardPayloadAccess();
+    default void close() {
+        unwrap();
     }
 }

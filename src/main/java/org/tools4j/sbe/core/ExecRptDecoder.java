@@ -23,13 +23,26 @@
  */
 package org.tools4j.sbe.core;
 
-public interface StringDecoder extends CharSequence {
-    @Override
-    String toString();
-    String toStringOrNull();
-    @Override
-    int length();
-    default boolean isEmpty() {
-        return length() == 0;
+public interface ExecRptDecoder extends MessageDecoder<ExecRptDecoder> {
+    static ExecRptDecoder create() {
+        return new DefaultExecRptDecoder();
+    }
+
+    String symbol();
+
+    LegGroup legGroup();
+
+    int rejectTextLength();
+    String rejectText();
+    <D> int rejectText(D dst, int dstOffset, CharWriter<? super D> writer, int length);
+
+    interface LegGroup extends Iterable<Leg> {
+        int count();
+        Leg next();
+    }
+    interface Leg extends LegGroup {
+        String settlDate();
+        long quantity();
+        double price();
     }
 }

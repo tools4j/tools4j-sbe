@@ -23,34 +23,16 @@
  */
 package org.tools4j.sbe.core;
 
-public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
+import org.agrona.DirectBuffer;
+import org.agrona.sbe.MessageDecoderFlyweight;
 
-    static ExecRptEncoder<StandardPayloadAccess> create() {
-        return create(new DefaultStandardPayloadAccess());
-    }
+public interface MessageDecoder<D extends MessageDecoder<D>> extends MessageDecoderFlyweight, AutoCloseable {
+    D wrap(DirectBuffer buffer, int offset, int actingBlockLength, int actingVersion);
+    D unwrap();
+    D reset();
 
-    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-        return new DefaultExecRptEncoder<>(payloadAccessProvider);
-    }
-
-    ExecRptEncoder<P> symbol(String symbol);
-    LegGroup<P> legGroupStart(int count);
-    RejectText<P> legGroupEmpty();
-
-    interface LegGroup<P> extends Iterable<Leg<P>> {
-        Leg<P> next();
-        RejectText<P> legGroupComplete();
-    }
-
-    interface Leg<P> extends LegGroup<P> {
-        Leg<P> settlDate(String settlDate);
-        Leg<P> quantity(long quantity);
-        Leg<P> price(double price);
-    }
-
-    interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        <S> P rejectText(S src, int srcIndex, CharReader<? super S> reader, int length);
+    @Override
+    default void close() {
+        unwrap();
     }
 }

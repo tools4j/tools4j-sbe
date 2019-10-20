@@ -23,6 +23,21 @@
  */
 package org.tools4j.sbe.core;
 
-public interface StringEncoder {
+import org.agrona.DirectBuffer;
 
+public interface DecoderSupplier {
+    default ExecRptDecoder execRpt(StandardPayloadAccess standardPayloadAccess) {
+        return execRpt(
+                standardPayloadAccess.buffer(),
+                standardPayloadAccess.offset() + standardPayloadAccess.headerLength(),
+                standardPayloadAccess.sbeBlockLength(),
+                standardPayloadAccess.sbeSchemaVersion()
+        );
+    }
+    ExecRptDecoder execRpt(DirectBuffer buffer, int offset, int actingBlockLength, int actingVersion);
+
+    static DecoderSupplier supplier() {
+        final ExecRptDecoder decoder = ExecRptDecoder.create();
+        return decoder::wrap;
+    }
 }

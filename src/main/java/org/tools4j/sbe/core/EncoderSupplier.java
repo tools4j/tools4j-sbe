@@ -26,7 +26,7 @@ package org.tools4j.sbe.core;
 import org.agrona.MutableDirectBuffer;
 
 public interface EncoderSupplier<T> {
-    ExecRptEncoder.Block<T> execRpt();
+    ExecRptEncoder<T> execRpt();
 
     static EncoderSupplier<StandardPayloadAccess> supplier(final MutableDirectBuffer buffer,
                                                            final int offset) {

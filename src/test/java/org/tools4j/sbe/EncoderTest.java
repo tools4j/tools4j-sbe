@@ -28,9 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.sbe.CompositeEncoderFlyweight;
 import org.agrona.sbe.MessageEncoderFlyweight;
 import org.junit.Test;
-import org.tools4j.sbe.core.EncoderSupplier;
-import org.tools4j.sbe.core.PayloadAccessProvider;
-import org.tools4j.sbe.core.StandardPayloadAccess;
+import org.tools4j.sbe.core.*;
 
 public class EncoderTest {
 
@@ -58,11 +56,9 @@ public class EncoderTest {
     }
 
     @Test
-    public void encode() {
-
+    public void encodeStandardPayload() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
         final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
-        final EncoderSupplier<Router> routers = EncoderSupplier.supplier(buffer, 0, new Printer());
 
         StandardPayloadAccess payload = encoders.execRpt()
                 .symbol("AUDUSD")
@@ -78,6 +74,12 @@ public class EncoderTest {
                 payload.offset(),
                 payload.buffer()
         );
+    }
+
+    @Test
+    public void encodeAndRoute() {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final EncoderSupplier<Router> routers = EncoderSupplier.supplier(buffer, 0, new Printer());
 
         routers.execRpt()
                 .symbol("AUDUSD")
@@ -85,7 +87,65 @@ public class EncoderTest {
                     .next().quantity(100000).price(1.23).settlDate("20191010")
                     .next().quantity(120000).price(1.34).settlDate("20191020")
                 .legGroupComplete()
-                .rejectText("")
+                .rejectText("Hello World", 6, CharReader.STRING_READER, 5)
                 .route();
+    }
+
+    @Test
+    public void encodeWithGroupIterator() {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final EncoderSupplier<Router> routers = EncoderSupplier.supplier(buffer, 0, new Printer());
+        final ExecRptEncoder<Router> execRpt = routers.execRpt();
+
+        execRpt.symbol("AUDUSD");
+
+        int i = 0;
+        final ExecRptEncoder.LegGroup<Router> legGroup = execRpt.legGroupStart(2);
+        for (final ExecRptEncoder.Leg<?> leg : legGroup) {
+            leg.quantity(i * 100000).price(1.23 + i).settlDate("2019101" + i);
+            i++;
+        }
+        legGroup.legGroupComplete().rejectText("bla").route();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void legGroupIncomplete() {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+
+        encoders.execRpt()
+                .symbol("AUDUSD")
+                .legGroupStart(2)
+                .legGroupComplete();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void legGroupStartAferComplete() {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+
+        final ExecRptEncoder<?> rpt = encoders.execRpt();
+        rpt
+                .symbol("AUDUSD")
+                .legGroupEmpty()
+                .rejectText("end of story");
+        rpt
+                .symbol("AUDUSD")
+                .legGroupStart(2);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void rejecctTextBeforeLegGroupComplete() {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+
+        final ExecRptEncoder.RejectText<?> rejectText = encoders.execRpt()
+                .symbol("AUDUSD")
+                .legGroupEmpty();
+        encoders.execRpt()
+                .symbol("AUDUSD")
+                .legGroupStart(2)
+                    .next().quantity(100000).price(1.23).settlDate("20191010");
+        rejectText.rejectText("group not finished");
     }
 }

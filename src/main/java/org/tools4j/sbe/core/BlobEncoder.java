@@ -23,34 +23,6 @@
  */
 package org.tools4j.sbe.core;
 
-public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
-
-    static ExecRptEncoder<StandardPayloadAccess> create() {
-        return create(new DefaultStandardPayloadAccess());
-    }
-
-    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-        return new DefaultExecRptEncoder<>(payloadAccessProvider);
-    }
-
-    ExecRptEncoder<P> symbol(String symbol);
-    LegGroup<P> legGroupStart(int count);
-    RejectText<P> legGroupEmpty();
-
-    interface LegGroup<P> extends Iterable<Leg<P>> {
-        Leg<P> next();
-        RejectText<P> legGroupComplete();
-    }
-
-    interface Leg<P> extends LegGroup<P> {
-        Leg<P> settlDate(String settlDate);
-        Leg<P> quantity(long quantity);
-        Leg<P> price(double price);
-    }
-
-    interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        <S> P rejectText(S src, int srcIndex, CharReader<? super S> reader, int length);
-    }
+public interface BlobEncoder {
+    <S> void blob(S source, int sourceOffset, ByteReader<? super S> reader, int length);
 }

@@ -28,66 +28,72 @@ import org.agrona.sbe.CompositeEncoderFlyweight;
 import org.agrona.sbe.MessageEncoderFlyweight;
 
 public class DefaultStandardPayloadAccess implements StandardPayloadAccess, PayloadAccessProvider<StandardPayloadAccess> {
-    private MutableDirectBuffer buffer;
-    private int offset;
-    private int headerLength;
-    private int messageLength;
+    private CompositeEncoderFlyweight header;
+    private MessageEncoderFlyweight message;
 
     @Override
     public StandardPayloadAccess payload(final CompositeEncoderFlyweight header, final MessageEncoderFlyweight message) {
-        if (header != null) {
-            offset = header.offset();
-            headerLength = header.encodedLength();
-            if (message != null) {
-                buffer = message.buffer();
-                messageLength = message.encodedLength();
-                return this;
-            }
-            buffer = header.buffer();
-            messageLength = 0;
-            return this;
+        if (header != null && message != null && header.buffer() != message.buffer()) {
+            throw new IllegalArgumentException("header and message must use the same buffer instance");
         }
-        if (message != null) {
-            buffer = message.buffer();
-            offset = message.offset();
-            headerLength = 0;
-            messageLength = message.encodedLength();
-            return this;
-        }
-        close();
+        this.header = header;
+        this.message = message;
         return this;
     }
 
     @Override
+    public int sbeSchemaId() {
+        return message.sbeSchemaId();
+    }
+
+    @Override
+    public int sbeSchemaVersion() {
+        return message.sbeSchemaVersion();
+    }
+
+    @Override
+    public int sbeTemplateId() {
+        return message.sbeTemplateId();
+    }
+
+    @Override
+    public String sbeSemanticType() {
+        return message.sbeSemanticType();
+    }
+
+    @Override
+    public int sbeBlockLength() {
+        return message.sbeBlockLength();
+    }
+
+    @Override
     public MutableDirectBuffer buffer() {
-        return buffer;
+        return message.buffer();
     }
 
     @Override
     public int offset() {
-        return offset;
+        return header != null ? header.offset() : message != null ? message.offset() : 0;
     }
 
     @Override
     public int headerLength() {
-        return headerLength;
+        return header != null ? header.encodedLength() : 0;
     }
 
     @Override
     public int messageLength() {
-        return messageLength;
+        return message != null ? message.encodedLength() : 0;
     }
 
     @Override
     public int totalLength() {
-        return headerLength + messageLength;
+        return headerLength() + messageLength();
     }
 
     @Override
     public void close() {
-        buffer = null;
-        offset = 0;
-        headerLength = 0;
-        messageLength = 0;
+        header = null;
+        message = null;
     }
 }

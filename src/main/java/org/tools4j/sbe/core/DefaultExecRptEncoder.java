@@ -24,7 +24,11 @@
 package org.tools4j.sbe.core;
 
 import org.agrona.MutableDirectBuffer;
+import trading.ExecRptDecoder;
 import trading.MessageHeaderEncoder;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 
 import static java.util.Objects.requireNonNull;
 
@@ -33,7 +37,6 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
     private final PayloadAccessProvider<? extends P> payloadAccessProvider;
     private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
     private final trading.ExecRptEncoder encoder = new trading.ExecRptEncoder();
-    private final DefaultBlock blcok = new DefaultBlock();
     private final DefaultLegGroup legGroup = new DefaultLegGroup();
     private final DefaultRejectText rejectText = new DefaultRejectText();
 
@@ -42,100 +45,232 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
     }
 
     @Override
-    public Block<P> wrap(final MutableDirectBuffer buffer, final int offset) {
+    public ExecRptEncoder<P> wrap(final MutableDirectBuffer buffer, final int offset) {
         this.headerEncoder.wrap(null, 0);
         this.encoder.wrap(buffer, offset);
-        return blcok;
+        return cleanp();
     }
 
     @Override
-    public Block<P> wrapAndApplyHeader(final MutableDirectBuffer buffer, final int offset) {
+    public ExecRptEncoder<P> wrapAndApplyHeader(final MutableDirectBuffer buffer, final int offset) {
         this.encoder.wrapAndApplyHeader(buffer, offset, headerEncoder);
-        return blcok;
+        return cleanp();
     }
 
-    @Override
-    public void unwrap() {
-        headerEncoder.wrap(null, 0);
-        encoder.wrap(null, 0);
+    private ExecRptEncoder<P> cleanp() {
         legGroup.unwrap();
         rejectText.unwrap();
+        return this;
     }
 
-    private class DefaultBlock implements Block<P> {
-        @Override
-        public Block<P> symbol(final String symbol) {
-            encoder.symbol(symbol);
-            return this;
-        }
-
-        @Override
-        public Leg<P> legGroupStart(final int count) {
-            return legGroup.init(count);
-        }
-
-        @Override
-        public RejectText<P> legGroupEmpty() {
-            return legGroupStart(0).legGroupComplete();
-        }
+    @Override
+    public ExecRptEncoder<P> unwrap() {
+        headerEncoder.wrap(null, 0);
+        encoder.wrap(null, 0);
+        return cleanp();
     }
 
-    private class DefaultLegGroup implements Leg<P> {
+    @Override
+    public MutableDirectBuffer buffer() {
+        return encoder.buffer();
+    }
+
+    @Override
+    public int offset() {
+        return encoder.offset();
+    }
+
+    @Override
+    public int sbeSchemaId() {
+        return encoder.sbeSchemaId();
+    }
+
+    @Override
+    public int sbeSchemaVersion() {
+        return encoder.sbeSchemaVersion();
+    }
+
+    @Override
+    public int sbeTemplateId() {
+        return encoder.sbeTemplateId();
+    }
+
+    @Override
+    public int sbeBlockLength() {
+        return encoder.sbeBlockLength();
+    }
+
+    @Override
+    public String sbeSemanticType() {
+        return encoder.sbeSemanticType();
+    }
+
+    @Override
+    public int encodedLength() {
+        return encoder.encodedLength();
+    }
+
+    @Override
+    public ExecRptEncoder<P> symbol(final String symbol) {
+        encoder.symbol(symbol);
+        return this;
+    }
+
+    @Override
+    public Leg<P> legGroupStart(final int count) {
+        return legGroup.init(count);
+    }
+
+    @Override
+    public RejectText<P> legGroupEmpty() {
+        return legGroupStart(0).legGroupComplete();
+    }
+
+    private class DefaultLegGroup implements Leg<P>, Iterator<Leg<P>> {
         trading.ExecRptEncoder.LegsEncoder legsEncoder;
+        int count;
+        int index = -1;
         DefaultLegGroup init(final int count) {
-            legsEncoder = encoder.legsCount(count);
+            if (legsEncoder != null) {
+                throw new IllegalStateException("out of order encoding of legGroup");
+            }
+            this.legsEncoder = encoder.legsCount(count);
+            this.count = count;
+            this.index = -1;
             return this;
         }
 
         void unwrap() {
             legsEncoder = null;
+            count = 0;
+            index = -1;
         }
 
         @Override
         public RejectText<P> legGroupComplete() {
-            legsEncoder = null;
+            if (index + 1 != count) {
+                throw new IllegalStateException("missing legs when encoding legGroup");
+            }
+            index = count;//make it same as count to prevent further leg access
             return rejectText;
+        }
+
+        void validateComplete() {
+            if (index != count) {
+                throw new IllegalStateException("out of order encoding, legGroup is not complete");
+            }
+        }
+
+        trading.ExecRptEncoder.LegsEncoder validateIndex() {
+            if (index < 0 || index >= count) {
+                throw new IllegalStateException("out of order encoding of legGroup");
+            }
+            return legsEncoder;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index + 1 < count;
         }
 
         @Override
         public Leg<P> next() {
             legsEncoder.next();
+            index++;
+            return this;
+        }
+
+        @Override
+        public Iterator<Leg<P>> iterator() {
+            if (index != -1) {
+                throw new IllegalStateException("out of order encoding of legGroup");
+            }
             return this;
         }
 
         @Override
         public Leg<P> settlDate(final String settlDate) {
-            legsEncoder.settlDate(settlDate);
+            validateIndex().settlDate(settlDate);
             return this;
         }
 
         @Override
         public Leg<P> quantity(final long quantity) {
-            legsEncoder.quantity(quantity);
+            validateIndex().quantity(quantity);
             return this;
         }
 
         @Override
         public Leg<P> price(final double price) {
-            legsEncoder.price(price);
+            validateIndex().price(price);
             return this;
         }
     }
 
     private class DefaultRejectText implements RejectText<P> {
+        boolean written;
+
+        void unwrap() {
+            written = false;
+        }
+
+        trading.ExecRptEncoder validateWrite() {
+            legGroup.validateComplete();
+            if (written) {
+                throw new IllegalStateException("out of order encoding of legGroup");
+            }
+            return encoder;
+        }
+
         @Override
         public P rejectText(final String text) {
-            encoder.rejectText(text);
+            validateWrite().rejectText(text);
+            written = true;
             return payload();
         }
 
         @Override
         public P rejectText(final CharSequence text) {
-            encoder.rejectText(text.toString());
+            validateWrite().rejectText(text.toString());
+            written = true;
             return payload();
         }
-        void unwrap() {
-            //nothing to do
+
+        @Override
+        public <S> P rejectText(final S src, final int srcIndex, final CharReader<? super S> reader, final int length) {
+            validateWrite();
+            if (!"ASCII".equals(ExecRptDecoder.rejectTextCharacterEncoding())) {
+                final char[] chars = new char[length];
+                for (int i = 0; i < length; i++) {
+                    chars[i] = reader.read(src, srcIndex + i);
+                }
+                final byte[] bytes;
+                try {
+                    bytes = new String(chars).getBytes(ExecRptDecoder.rejectTextCharacterEncoding());
+                } catch (final UnsupportedEncodingException e) {
+                    throw new IllegalArgumentException("Unsupported encoding for rejecdtText: " + ExecRptDecoder.rejectTextCharacterEncoding());
+                }
+                encoder.putRejectText(bytes, 0, bytes.length);
+                written = true;
+                return payload();
+            }
+            if (length > 1073741824) {
+                throw new IllegalStateException("length > maxValue for type: " + length);
+            }
+            final int headerLength = 4;
+            final int limit = encoder.limit();
+            encoder.limit(limit + headerLength + length);
+            final MutableDirectBuffer buffer = encoder.buffer();
+            buffer.putInt(limit, length, java.nio.ByteOrder.LITTLE_ENDIAN);
+            for (int i = 0; i < length; i++) {
+                char ch = reader.read(src, srcIndex + i);
+                if (ch > 127) {
+                    ch = '?';
+                }
+                encoder.buffer().putByte(limit + headerLength + i, (byte)ch);
+            }
+            written = true;
+            return payload();
         }
     }
 
