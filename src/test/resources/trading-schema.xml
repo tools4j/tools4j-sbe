@@ -22,4 +22,26 @@
         </group>
         <data name="rejectText" id="103" type="varStringEncoding" semanticType="OrdRejReason"/>
     </sbe:message>
+    <sbe:message name="Envelope" id="20000" description="Envelope for nested message">
+        <field name="time" id="1" type="int64"/>
+        <field name="seqNo" id="2" type="uint64"/>
+
+        <field name="templateId" id="11" type="uint16"/>
+        <field name="blockLength" id="12" type="uint16"/>
+        <field name="schemaId" id="13" type="uint16"/>
+        <field name="version" id="14" type="uint16"/>
+
+        <!--
+        <group name="nested" id="20">
+            <field name="templateId" id="21" type="uint16"/>
+            <field name="blockLength" id="22" type="uint16"/>
+            <field name="schemaId" id="23" type="uint16"/>
+            <field name="version" id="24" type="uint16"/>
+
+            <data name="data" id="25" type="varDataEncoding"/>
+        </group>
+        -->
+
+        <data name="data" id="30" type="varDataEncoding"/>
+    </sbe:message>
 </sbe:messageSchema>

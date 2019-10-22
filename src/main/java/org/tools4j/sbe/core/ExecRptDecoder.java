@@ -30,16 +30,18 @@ public interface ExecRptDecoder extends MessageDecoder<ExecRptDecoder> {
 
     String symbol();
 
-    LegGroup legGroup();
+    LegGroup legs();
 
     int rejectTextLength();
     String rejectText();
+    <D> int rejectText(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
     <D> int rejectText(D dst, int dstOffset, CharWriter<? super D> writer, int length);
 
     interface LegGroup extends Iterable<Leg> {
         int count();
         Leg next();
     }
+
     interface Leg extends LegGroup {
         String settlDate();
         long quantity();

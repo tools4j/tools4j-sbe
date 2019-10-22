@@ -231,18 +231,48 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
 
         @Override
         public P rejectText(final CharSequence text) {
-            validateWrite().rejectText(text.toString());
+            return rejectText(text, 0, CharReader.CHAR_SEQUENCE_READER, text.length());
+        }
+
+        @Override
+        public P rejectText(final byte[] src, final int srcOffset, final int length) {
+            return rejectText(src, srcOffset, ByteReader.BYTE_ARRAY_READER, length);
+        }
+
+        @Override
+        public P rejectText(final char[] src, final int srcOffset, final int length) {
+            return rejectText(src, srcOffset, CharReader.CHAR_ARRAY_READER, length);
+        }
+
+        @Override
+        public <S> P rejectText(final S src, final int srcOffset, final ByteReader<? super S> reader, final int length) {
+            validateWrite();
+            if (length > 1073741824) {
+                throw new IllegalStateException("length > maxValue for type: " + length);
+            }
+            final int headerLength = 4;
+            final int limit = encoder.limit();
+            encoder.limit(limit + headerLength + length);
+            final MutableDirectBuffer buffer = encoder.buffer();
+            buffer.putInt(limit, length, java.nio.ByteOrder.LITTLE_ENDIAN);
+            for (int i = 0; i < length; i++) {
+                int b = reader.read(src, srcOffset + i) & 0xff;
+                if (b > 127) {
+                    b = '?';
+                }
+                encoder.buffer().putByte(limit + headerLength + i, (byte)b);
+            }
             written = true;
             return payload();
         }
 
         @Override
-        public <S> P rejectText(final S src, final int srcIndex, final CharReader<? super S> reader, final int length) {
+        public <S> P rejectText(final S src, final int srcOffset, final CharReader<? super S> reader, final int length) {
             validateWrite();
             if (!"ASCII".equals(ExecRptDecoder.rejectTextCharacterEncoding())) {
                 final char[] chars = new char[length];
                 for (int i = 0; i < length; i++) {
-                    chars[i] = reader.read(src, srcIndex + i);
+                    chars[i] = reader.read(src, srcOffset + i);
                 }
                 final byte[] bytes;
                 try {
@@ -263,7 +293,7 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
             final MutableDirectBuffer buffer = encoder.buffer();
             buffer.putInt(limit, length, java.nio.ByteOrder.LITTLE_ENDIAN);
             for (int i = 0; i < length; i++) {
-                char ch = reader.read(src, srcIndex + i);
+                char ch = reader.read(src, srcOffset + i);
                 if (ch > 127) {
                     ch = '?';
                 }

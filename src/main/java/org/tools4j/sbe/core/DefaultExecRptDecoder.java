@@ -107,7 +107,7 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     }
 
     @Override
-    public LegGroup legGroup() {
+    public LegGroup legs() {
         return legGroup.init();
     }
 
@@ -119,6 +119,11 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     @Override
     public String rejectText() {
         return rejectText.init().rejectText();
+    }
+
+    @Override
+    public <D> int rejectText(final D dst, final int dstOffset, final ByteWriter<? super D> writer, final int length) {
+        return rejectText.init().rejectText(dst, dstOffset, writer, length);
     }
 
     @Override
@@ -233,7 +238,23 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
             read = true;
             return result;
         }
-        <T> int rejectText(final T dst, final int dstOffset, final CharWriter<? super T> writer, final int length) {
+
+        <D> int rejectText(final D dst, final int dstOffset, final ByteWriter<? super D> writer, final int length) {
+            validateNotRead();
+            final int headerLength = 4;
+            final int limit = decoder.limit();
+            final DirectBuffer buffer = decoder.buffer();
+            final int dataLength = (int)(buffer.getInt(limit, java.nio.ByteOrder.LITTLE_ENDIAN) & 0xFFFF_FFFFL);
+            final int bytesCopied = Math.min(length, dataLength);
+            decoder.limit(limit + headerLength + dataLength);
+            read = true;
+            for (int i = 0; i < bytesCopied; i++) {
+                writer.write(dst, dstOffset + i, dstOffset + bytesCopied, buffer.getByte(i));
+            }
+            return bytesCopied;
+        }
+
+        <D> int rejectText(final D dst, final int dstOffset, final CharWriter<? super D> writer, final int length) {
             validateNotRead();
             if (!"ASCII".equals(trading.ExecRptDecoder.rejectTextCharacterEncoding())) {
                 final String s = decoder.rejectText();

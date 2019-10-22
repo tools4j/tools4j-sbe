@@ -23,37 +23,33 @@
  */
 package org.tools4j.sbe.core;
 
-public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
+import org.agrona.DirectBuffer;
+import org.agrona.sbe.EncoderFlyweight;
+import org.agrona.sbe.MessageEncoderFlyweight;
 
-    static ExecRptEncoder<StandardPayloadAccess> create() {
-        return create(new DefaultStandardPayloadAccess());
-    }
+public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
 
-    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-        return new DefaultExecRptEncoder<>(payloadAccessProvider);
-    }
+//    static EnvelopeEncoder<StandardPayloadAccess> create() {
+//        return create(new DefaultStandardPayloadAccess());
+//    }
+//
+//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
+//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
+//    }
 
-    ExecRptEncoder<P> symbol(String symbol);
-    LegGroup<P> legGroupStart(int count);
-    RejectText<P> legGroupEmpty();
+    EnvelopeEncoder<P> time(long time);
+    EnvelopeEncoder<P> seqNo(long seqNo);
 
-    interface LegGroup<P> extends Iterable<Leg<P>> {
-        Leg<P> next();
-        RejectText<P> legGroupComplete();
-    }
+    P data(byte[] src, int srcOffset, int length);
+    P data(DirectBuffer src, int srcOffset, int length);
+    <S> P data(S src, int srcOffset, ByteReader<? super S> reader, int length);
+    Data<P> dataStart();
+    P dataEmpty();
 
-    interface Leg<P> extends LegGroup<P> {
-        Leg<P> settlDate(String settlDate);
-        Leg<P> quantity(long quantity);
-        Leg<P> price(double price);
-    }
-
-    interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        P rejectText(byte[] src, int srcOffset, int length);
-        P rejectText(char[] src, int srcOffset, int length);
-        <S> P rejectText(S src, int srcOffset, ByteReader<? super S> reader, int length);
-        <S> P rejectText(S src, int srcOffset, CharReader<? super S> reader, int length);
+    interface Data<P> {
+        <E extends EncoderFlyweight> E wrap(E encoder);
+        <E extends EncoderFlyweight> E wrap(E encoder, int offset);
+        <E extends MessageEncoder<?>> E wrapAndApplyHeader(E encoder);
+        P dataComplete();
     }
 }

@@ -59,7 +59,7 @@ public class DecoderTest {
         final ExecRptDecoder decoder = decoders.execRpt(payload);
 
         System.out.printf("symbol=%s\n", decoder.symbol());
-        for (final ExecRptDecoder.Leg leg : decoder.legGroup()) {
+        for (final ExecRptDecoder.Leg leg : decoder.legs()) {
             System.out.printf("  leg{quantity=%d, price=%f, settlDate=%s}\n",
                     leg.quantity(), leg.price(), leg.settlDate());
         }
@@ -69,7 +69,7 @@ public class DecoderTest {
         decoder.reset();
 
         System.out.printf("symbol=%s, legs=%d, rejectText=%s\n",
-                decoder.symbol(), decoder.legGroup().count(), decoder.rejectText());
+                decoder.symbol(), decoder.legs().count(), decoder.rejectText());
 
         decoder.reset();
 

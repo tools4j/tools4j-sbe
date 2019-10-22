@@ -23,37 +23,15 @@
  */
 package org.tools4j.sbe.core;
 
-public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
+import org.agrona.MutableDirectBuffer;
 
-    static ExecRptEncoder<StandardPayloadAccess> create() {
-        return create(new DefaultStandardPayloadAccess());
-    }
+import java.nio.ByteBuffer;
 
-    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-        return new DefaultExecRptEncoder<>(payloadAccessProvider);
-    }
+@FunctionalInterface
+public interface ByteWriter<D> {
+    void write(D dest, int index, int end, byte value);
 
-    ExecRptEncoder<P> symbol(String symbol);
-    LegGroup<P> legGroupStart(int count);
-    RejectText<P> legGroupEmpty();
-
-    interface LegGroup<P> extends Iterable<Leg<P>> {
-        Leg<P> next();
-        RejectText<P> legGroupComplete();
-    }
-
-    interface Leg<P> extends LegGroup<P> {
-        Leg<P> settlDate(String settlDate);
-        Leg<P> quantity(long quantity);
-        Leg<P> price(double price);
-    }
-
-    interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        P rejectText(byte[] src, int srcOffset, int length);
-        P rejectText(char[] src, int srcOffset, int length);
-        <S> P rejectText(S src, int srcOffset, ByteReader<? super S> reader, int length);
-        <S> P rejectText(S src, int srcOffset, CharReader<? super S> reader, int length);
-    }
+    ByteWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putByte(index, value);
+    ByteWriter<ByteBuffer> BYTE_BUFFER_WRITER = (dest, index, end, value) -> dest.put(index, value);
+    ByteWriter<byte[]> BYTE_ARRAY_WRITER = (dest, index, end, value) -> dest[index] = value;
 }

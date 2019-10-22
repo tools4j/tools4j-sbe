@@ -23,37 +23,28 @@
  */
 package org.tools4j.sbe.core;
 
-public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
+import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.CompositeDecoderFlyweight;
+import org.agrona.sbe.MessageDecoderFlyweight;
 
-    static ExecRptEncoder<StandardPayloadAccess> create() {
-        return create(new DefaultStandardPayloadAccess());
-    }
+public interface EnvelopeDecoder extends MessageDecoder<EnvelopeDecoder> {
+//    static EnvelopeDecoder create() {
+//        return new DefaultEnvelopeDecoder();
+//    }
 
-    static <P> ExecRptEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-        return new DefaultExecRptEncoder<>(payloadAccessProvider);
-    }
+    long time();
+    long seqNo();
 
-    ExecRptEncoder<P> symbol(String symbol);
-    LegGroup<P> legGroupStart(int count);
-    RejectText<P> legGroupEmpty();
+    int dataLength();
+    <D> int data(byte[] dst, int dstOffset, int length);
+    <D> int data(MutableDirectBuffer dst, int dstOffset, int length);
+    <D> int data(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
+    Data data();
 
-    interface LegGroup<P> extends Iterable<Leg<P>> {
-        Leg<P> next();
-        RejectText<P> legGroupComplete();
-    }
-
-    interface Leg<P> extends LegGroup<P> {
-        Leg<P> settlDate(String settlDate);
-        Leg<P> quantity(long quantity);
-        Leg<P> price(double price);
-    }
-
-    interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        P rejectText(byte[] src, int srcOffset, int length);
-        P rejectText(char[] src, int srcOffset, int length);
-        <S> P rejectText(S src, int srcOffset, ByteReader<? super S> reader, int length);
-        <S> P rejectText(S src, int srcOffset, CharReader<? super S> reader, int length);
+    interface Data {
+        int length();
+        <D extends CompositeDecoderFlyweight> D wrap(D decoder);
+        <D extends MessageDecoderFlyweight> D data(D decoder);
+        <D extends MessageDecoderFlyweight> D data(D decoder, int offset, int actingBlockLength, int actingVersion);
     }
 }

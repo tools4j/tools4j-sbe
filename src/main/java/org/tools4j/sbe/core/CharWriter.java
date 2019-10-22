@@ -29,8 +29,8 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
 @FunctionalInterface
-public interface CharWriter<T> {
-    void write(T dest, int index, int end, char value);
+public interface CharWriter<D> {
+    void write(D dest, int index, int end, char value);
 
     CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putChar(index, value);
     CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER_ASCII = (dest, index, end, value) -> dest.putByte(index, (byte)value);
