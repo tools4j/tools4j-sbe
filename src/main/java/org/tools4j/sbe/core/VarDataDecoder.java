@@ -23,6 +23,20 @@
  */
 package org.tools4j.sbe.core;
 
-public interface BlobEncoder {
-    <S> void blob(S source, int sourceOffset, ByteReader<? super S> reader, int length);
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.CompositeDecoderFlyweight;
+import org.agrona.sbe.MessageDecoderFlyweight;
+
+public interface VarDataDecoder {
+    int length();
+    int get(byte[] dst, int dstOffset, int length);
+    int get(MutableDirectBuffer dst, int dstOffset, int length);
+    <T> T get(ValueDecoder<T> decoder);
+    <D> int get(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
+    DirectBuffer wrap(DirectBuffer decoder);
+    <D extends DirectView> D wrap(D decoder);
+    <D extends CompositeDecoderFlyweight> D wrap(D decoder);
+    <D extends MessageDecoderFlyweight> D wrap(D decoder);
+    <D extends MessageDecoderFlyweight> D wrap(D decoder, int offset, int actingBlockLength, int actingVersion);
 }

@@ -49,11 +49,6 @@ public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
     }
 
     interface RejectText<P> {
-        P rejectText(String text);
-        P rejectText(CharSequence text);
-        P rejectText(byte[] src, int srcOffset, int length);
-        P rejectText(char[] src, int srcOffset, int length);
-        <S> P rejectText(S src, int srcOffset, ByteReader<? super S> reader, int length);
-        <S> P rejectText(S src, int srcOffset, CharReader<? super S> reader, int length);
+        VarStringEncoder<P> rejectText();
     }
 }

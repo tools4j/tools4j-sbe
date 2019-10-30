@@ -23,10 +23,6 @@
  */
 package org.tools4j.sbe.core;
 
-import org.agrona.MutableDirectBuffer;
-import org.agrona.sbe.CompositeDecoderFlyweight;
-import org.agrona.sbe.MessageDecoderFlyweight;
-
 public interface EnvelopeDecoder extends MessageDecoder<EnvelopeDecoder> {
 //    static EnvelopeDecoder create() {
 //        return new DefaultEnvelopeDecoder();
@@ -35,16 +31,6 @@ public interface EnvelopeDecoder extends MessageDecoder<EnvelopeDecoder> {
     long time();
     long seqNo();
 
-    int dataLength();
-    <D> int data(byte[] dst, int dstOffset, int length);
-    <D> int data(MutableDirectBuffer dst, int dstOffset, int length);
-    <D> int data(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
-    Data data();
+    VarDataDecoder data();
 
-    interface Data {
-        int length();
-        <D extends CompositeDecoderFlyweight> D wrap(D decoder);
-        <D extends MessageDecoderFlyweight> D data(D decoder);
-        <D extends MessageDecoderFlyweight> D data(D decoder, int offset, int actingBlockLength, int actingVersion);
-    }
 }

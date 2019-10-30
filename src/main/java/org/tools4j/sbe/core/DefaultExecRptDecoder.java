@@ -26,6 +26,7 @@ package org.tools4j.sbe.core;
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 public class DefaultExecRptDecoder implements ExecRptDecoder {
@@ -112,23 +113,8 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     }
 
     @Override
-    public int rejectTextLength() {
-        return rejectText.init().rejectTextLength();
-    }
-
-    @Override
-    public String rejectText() {
-        return rejectText.init().rejectText();
-    }
-
-    @Override
-    public <D> int rejectText(final D dst, final int dstOffset, final ByteWriter<? super D> writer, final int length) {
-        return rejectText.init().rejectText(dst, dstOffset, writer, length);
-    }
-
-    @Override
-    public <D> int rejectText(final D dst, final int dstOffset, final CharWriter<? super D> writer, final int length) {
-        return rejectText.init().rejectText(dst, dstOffset, writer, length);
+    public VarStringDecoder rejectText() {
+        return rejectText.init();
     }
 
     private class DefaultLegGroup implements Leg, Iterator<Leg> {
@@ -206,7 +192,7 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
         }
     }
 
-    private class DefaultRejectText {
+    private class DefaultRejectText implements VarStringDecoder {
         boolean read;
         DefaultRejectText init() {
             validateNotRead();
@@ -228,18 +214,35 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
                 throw new IllegalStateException("out of order decoding of rejectTextLength");
             }
         }
-        int rejectTextLength() {
+
+        @Override
+        public int length() {
             validateNotRead();
             return decoder.rejectTextLength();
         }
-        String rejectText() {
+
+        @Override
+        public String get() {
             validateNotRead();
             final String result = decoder.rejectText();
             read = true;
             return result;
         }
 
-        <D> int rejectText(final D dst, final int dstOffset, final ByteWriter<? super D> writer, final int length) {
+        @Override
+        public <T> T get(final ValueDecoder<T> valueDecoder) {
+            validateNotRead();
+            final int headerLength = 4;
+            final int limit = decoder.limit();
+            final DirectBuffer buffer = decoder.buffer();
+            final int dataLength = (int)(buffer.getInt(limit, java.nio.ByteOrder.LITTLE_ENDIAN) & 0xFFFF_FFFFL);
+            decoder.limit(limit + headerLength + dataLength);
+            read = true;
+            return valueDecoder.lookup(buffer, limit + headerLength, dataLength);
+        }
+
+        @Override
+        public <D> int get(final D dst, final int dstOffset, final ByteWriter<? super D> writer, final int length) {
             validateNotRead();
             final int headerLength = 4;
             final int limit = decoder.limit();
@@ -249,12 +252,13 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
             decoder.limit(limit + headerLength + dataLength);
             read = true;
             for (int i = 0; i < bytesCopied; i++) {
-                writer.write(dst, dstOffset + i, dstOffset + bytesCopied, buffer.getByte(i));
+                writer.write(dst, dstOffset + i, dstOffset + bytesCopied, buffer.getByte(limit + headerLength + i));
             }
             return bytesCopied;
         }
 
-        <D> int rejectText(final D dst, final int dstOffset, final CharWriter<? super D> writer, final int length) {
+        @Override
+        public <D> int get(final D dst, final int dstOffset, final CharWriter<? super D> writer, final int length) {
             validateNotRead();
             if (!"ASCII".equals(trading.ExecRptDecoder.rejectTextCharacterEncoding())) {
                 final String s = decoder.rejectText();
@@ -273,9 +277,44 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
             decoder.limit(limit + headerLength + dataLength);
             read = true;
             for (int i = 0; i < bytesCopied; i++) {
-                writer.write(dst, dstOffset + i, dstOffset + bytesCopied, (char)buffer.getByte(i));
+                writer.write(dst, dstOffset + i, dstOffset + bytesCopied, (char)buffer.getByte(limit + headerLength + i));
             }
             return bytesCopied;
+        }
+
+        @Override
+        public int appendTo(final Appendable appendable) {
+            validateNotRead();
+            try {
+                if (!"ASCII".equals(trading.ExecRptDecoder.rejectTextCharacterEncoding())) {
+                    final String s = get();
+                    appendable.append(s);
+                    return s.length();
+                }
+                final int headerLength = 4;
+                final int limit = decoder.limit();
+                final DirectBuffer buffer = decoder.buffer();
+                final int dataLength = (int)(buffer.getInt(limit, java.nio.ByteOrder.LITTLE_ENDIAN) & 0xFFFF_FFFFL);
+                decoder.limit(limit + headerLength + dataLength);
+                read = true;
+                for (int i = 0; i < dataLength; i++) {
+                    appendable.append((char)buffer.getByte(limit + headerLength + i));
+                }
+                return dataLength;
+            } catch (final IOException e) {
+                throw new RuntimeException("appendTo(..) failed", e);
+            }
+        }
+
+        @Override
+        public int appendTo(final StringBuilder stringBuilder) {
+            validateNotRead();
+            if (!"ASCII".equals(trading.ExecRptDecoder.rejectTextCharacterEncoding())) {
+                final String s = get();
+                stringBuilder.append(s);
+                return s.length();
+            }
+            return get(stringBuilder, stringBuilder.length(), CharWriter.STRING_BUILDER_WRITER, Integer.MAX_VALUE);
         }
     }
 

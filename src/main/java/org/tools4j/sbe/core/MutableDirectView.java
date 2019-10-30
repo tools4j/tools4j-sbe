@@ -23,19 +23,16 @@
  */
 package org.tools4j.sbe.core;
 
-public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
+import org.agrona.MutableDirectBuffer;
 
-//    static EnvelopeEncoder<StandardPayloadAccess> create() {
-//        return create(new DefaultStandardPayloadAccess());
-//    }
-//
-//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
-//    }
-
-    EnvelopeEncoder<P> time(long time);
-    EnvelopeEncoder<P> seqNo(long seqNo);
-
-    VarDataEncoder<P> data();
-
+@FunctionalInterface
+public interface MutableDirectView {
+    /**
+     * Attach a view to a {@link MutableDirectBuffer} for providing direct access.
+     *
+     * @param buffer to which the view is attached.
+     * @param offset at which the view begins.
+     * @param length of the buffer included in the view.
+     */
+    void wrap(MutableDirectBuffer buffer, int offset, int length);
 }

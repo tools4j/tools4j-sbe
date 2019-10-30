@@ -66,7 +66,7 @@ public class EncoderTest {
                     .next().quantity(100000).price(1.23).settlDate("20191010")
                     .next().quantity(120000).price(1.34).settlDate("20191020")
                 .legGroupComplete()
-                .rejectText("");
+                .rejectText().empty();
         System.out.printf("header-length=%d, message-length=%d, total-length=%d, offset=%d, buffer=%s\n",
                 payload.headerLength(),
                 payload.messageLength(),
@@ -87,7 +87,7 @@ public class EncoderTest {
                     .next().quantity(100000).price(1.23).settlDate("20191010")
                     .next().quantity(120000).price(1.34).settlDate("20191020")
                 .legGroupComplete()
-                .rejectText("Hello World", 6, CharReader.STRING_READER, 5)
+                .rejectText().put("Hello World", 6, CharReader.STRING_READER, 5)
                 .route();
     }
 
@@ -105,7 +105,7 @@ public class EncoderTest {
             leg.quantity(i * 100000).price(1.23 + i).settlDate("2019101" + i);
             i++;
         }
-        legGroup.legGroupComplete().rejectText("bla").route();
+        legGroup.legGroupComplete().rejectText().put("bla").route();
     }
 
     @Test(expected = IllegalStateException.class)
@@ -128,7 +128,7 @@ public class EncoderTest {
         rpt
                 .symbol("AUDUSD")
                 .legGroupEmpty()
-                .rejectText("end of story");
+                .rejectText().put("end of story");
         rpt
                 .symbol("AUDUSD")
                 .legGroupStart(2);
@@ -146,6 +146,6 @@ public class EncoderTest {
                 .symbol("AUDUSD")
                 .legGroupStart(2)
                     .next().quantity(100000).price(1.23).settlDate("20191010");
-        rejectText.rejectText("group not finished");
+        rejectText.rejectText().put("group not finished");
     }
 }

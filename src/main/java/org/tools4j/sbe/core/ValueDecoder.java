@@ -23,19 +23,8 @@
  */
 package org.tools4j.sbe.core;
 
-public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
+import org.agrona.DirectBuffer;
 
-//    static EnvelopeEncoder<StandardPayloadAccess> create() {
-//        return create(new DefaultStandardPayloadAccess());
-//    }
-//
-//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
-//    }
-
-    EnvelopeEncoder<P> time(long time);
-    EnvelopeEncoder<P> seqNo(long seqNo);
-
-    VarDataEncoder<P> data();
-
+public interface ValueDecoder<T> {
+    T lookup(DirectBuffer buffer, int offset, int length);
 }

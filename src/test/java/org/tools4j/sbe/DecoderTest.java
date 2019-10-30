@@ -50,7 +50,7 @@ public class DecoderTest {
                     .next().quantity(100000).price(1.23).settlDate("20191010")
                     .next().quantity(120000).price(1.34).settlDate("20191020")
                 .legGroupComplete()
-                .rejectText("bla");
+                .rejectText().put("bla");
     }
 
     @Test
@@ -64,7 +64,7 @@ public class DecoderTest {
                     leg.quantity(), leg.price(), leg.settlDate());
         }
         System.out.printf("rejectTextLength=%d, rejectText=%s\n",
-                decoder.rejectTextLength(), decoder.rejectText());
+                decoder.rejectText().length(), decoder.rejectText());
 
         decoder.reset();
 
@@ -74,7 +74,7 @@ public class DecoderTest {
         decoder.reset();
 
         final StringBuilder stringBuilder = new StringBuilder("rejectText=");
-        decoder.rejectText(stringBuilder, stringBuilder.length(), STRING_BUILDER_WRITER, Integer.MAX_VALUE);
+        decoder.rejectText().get(stringBuilder, stringBuilder.length(), STRING_BUILDER_WRITER, Integer.MAX_VALUE);
         System.out.println(stringBuilder);
     }
 
@@ -82,8 +82,8 @@ public class DecoderTest {
     public void decodeVarTwiceWithoutReset() {
         final DecoderSupplier decoders = DecoderSupplier.supplier();
         final ExecRptDecoder decoder = decoders.execRpt(payload);
-        System.out.printf("first rejectText: %s\n", decoder.rejectText());
-        System.out.printf("second rejectText: %s\n", decoder.rejectText());
+        System.out.printf("first rejectText: %s\n", decoder.rejectText().get());
+        System.out.printf("second rejectText: %s\n", decoder.rejectText().get());
         fail("should cause an exception");
     }
 }

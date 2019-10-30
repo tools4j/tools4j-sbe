@@ -207,7 +207,7 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
         }
     }
 
-    private class DefaultRejectText implements RejectText<P> {
+    private class DefaultRejectText implements RejectText<P>, VarStringEncoder<P> {
         boolean written;
 
         void unwrap() {
@@ -223,29 +223,39 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
         }
 
         @Override
-        public P rejectText(final String text) {
+        public VarStringEncoder<P> rejectText() {
+            return this;
+        }
+
+        @Override
+        public P empty() {
+            return put("");
+        }
+
+        @Override
+        public P put(final String text) {
             validateWrite().rejectText(text);
             written = true;
             return payload();
         }
 
         @Override
-        public P rejectText(final CharSequence text) {
-            return rejectText(text, 0, CharReader.CHAR_SEQUENCE_READER, text.length());
+        public P put(final CharSequence text) {
+            return put(text, 0, CharReader.CHAR_SEQUENCE_READER, text.length());
         }
 
         @Override
-        public P rejectText(final byte[] src, final int srcOffset, final int length) {
-            return rejectText(src, srcOffset, ByteReader.BYTE_ARRAY_READER, length);
+        public P put(final byte[] src, final int srcOffset, final int length) {
+            return put(src, srcOffset, ByteReader.BYTE_ARRAY_READER, length);
         }
 
         @Override
-        public P rejectText(final char[] src, final int srcOffset, final int length) {
-            return rejectText(src, srcOffset, CharReader.CHAR_ARRAY_READER, length);
+        public P put(final char[] src, final int srcOffset, final int length) {
+            return put(src, srcOffset, CharReader.CHAR_ARRAY_READER, length);
         }
 
         @Override
-        public <S> P rejectText(final S src, final int srcOffset, final ByteReader<? super S> reader, final int length) {
+        public <S> P put(final S src, final int srcOffset, final ByteReader<? super S> reader, final int length) {
             validateWrite();
             if (length > 1073741824) {
                 throw new IllegalStateException("length > maxValue for type: " + length);
@@ -267,7 +277,7 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
         }
 
         @Override
-        public <S> P rejectText(final S src, final int srcOffset, final CharReader<? super S> reader, final int length) {
+        public <S> P put(final S src, final int srcOffset, final CharReader<? super S> reader, final int length) {
             validateWrite();
             if (!"ASCII".equals(ExecRptDecoder.rejectTextCharacterEncoding())) {
                 final char[] chars = new char[length];

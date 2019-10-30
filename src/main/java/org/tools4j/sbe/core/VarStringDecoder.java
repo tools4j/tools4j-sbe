@@ -23,19 +23,12 @@
  */
 package org.tools4j.sbe.core;
 
-public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
-
-//    static EnvelopeEncoder<StandardPayloadAccess> create() {
-//        return create(new DefaultStandardPayloadAccess());
-//    }
-//
-//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
-//    }
-
-    EnvelopeEncoder<P> time(long time);
-    EnvelopeEncoder<P> seqNo(long seqNo);
-
-    VarDataEncoder<P> data();
-
+public interface VarStringDecoder {
+    int length();
+    String get();
+    <T> T get(ValueDecoder<T> decoder);
+    <D> int get(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
+    <D> int get(D dst, int dstOffset, CharWriter<? super D> writer, int length);
+    int appendTo(Appendable appendable);
+    int appendTo(StringBuilder stringBuilder);
 }

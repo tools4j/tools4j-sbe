@@ -32,10 +32,7 @@ public interface ExecRptDecoder extends MessageDecoder<ExecRptDecoder> {
 
     LegGroup legs();
 
-    int rejectTextLength();
-    String rejectText();
-    <D> int rejectText(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
-    <D> int rejectText(D dst, int dstOffset, CharWriter<? super D> writer, int length);
+    VarStringDecoder rejectText();
 
     interface LegGroup extends Iterable<Leg> {
         int count();

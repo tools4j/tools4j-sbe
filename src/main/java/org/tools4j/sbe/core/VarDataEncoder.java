@@ -23,19 +23,22 @@
  */
 package org.tools4j.sbe.core;
 
-public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.EncoderFlyweight;
 
-//    static EnvelopeEncoder<StandardPayloadAccess> create() {
-//        return create(new DefaultStandardPayloadAccess());
-//    }
-//
-//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
-//    }
+public interface VarDataEncoder<P> {
+    P empty();
+    P put(byte[] src, int srcOffset, int length);
+    P put(DirectBuffer src, int srcOffset, int length);
+    <S> P put(S src, int srcOffset, ByteReader<? super S> reader, int length);
 
-    EnvelopeEncoder<P> time(long time);
-    EnvelopeEncoder<P> seqNo(long seqNo);
-
-    VarDataEncoder<P> data();
-
+    MutableDirectBuffer wrap(MutableDirectBuffer encoder);
+    <E extends MutableDirectView> E wrap(E encoder);
+    <E extends EncoderFlyweight> E wrap(E encoder);
+    <E extends EncoderFlyweight> E wrap(E encoder, int offset);
+    <E extends MessageEncoder<?>> E wrapAndApplyHeader(E encoder);
+    P unwrap(MutableDirectView encoder);
+    P unwrap(MutableDirectBuffer encoder);
+    P unwrap(EncoderFlyweight encoder);
 }
