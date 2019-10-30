@@ -26,11 +26,9 @@ package org.tools4j.sbe.core;
 import org.agrona.DirectBuffer;
 
 import java.nio.charset.Charset;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.sbe.core.StringFactories.ASCII_STRING_FACTORY;
-import static org.tools4j.sbe.core.StringFactories.stringFactory;
+import static org.tools4j.sbe.core.StringFactory.stringDecoder;
 
 public class StringCache implements ValueCache<String> {
 
@@ -41,7 +39,7 @@ public class StringCache implements ValueCache<String> {
     }
 
     public StringCache(final int initialCapacity, final int maxCapacity) {
-        this(initialCapacity, maxCapacity, ASCII_STRING_FACTORY);
+        this(initialCapacity, maxCapacity, StringFactory.ASCII);
     }
 
     public StringCache(final int initialCapacity, final Charset charset) {
@@ -49,12 +47,12 @@ public class StringCache implements ValueCache<String> {
     }
 
     public StringCache(final int initialCapacity, final int maxCapacity, final Charset charset) {
-        this(initialCapacity, maxCapacity, stringFactory(charset));
+        this(initialCapacity, maxCapacity, stringDecoder(charset));
     }
 
     public StringCache(final int initialCapacity,
                        final int maxCapacity,
-                       final Function<? super DirectBuffer, ? extends String> valueFactory) {
+                       final ValueDecoder<? extends String> valueFactory) {
         this(new DefaultValueCache<>(initialCapacity, maxCapacity, valueFactory));
     }
 
@@ -63,8 +61,8 @@ public class StringCache implements ValueCache<String> {
     }
 
     @Override
-    public String lookup(final DirectBuffer buffer, final int offset, final int length) {
-        return cache.lookup(buffer, offset, length);
+    public String get(final DirectBuffer buffer, final int offset, final int length) {
+        return cache.get(buffer, offset, length);
     }
 
     @Override

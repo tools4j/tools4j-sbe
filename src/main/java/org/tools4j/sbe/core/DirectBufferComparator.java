@@ -27,14 +27,29 @@ import org.agrona.DirectBuffer;
 
 import java.nio.charset.Charset;
 import java.util.Comparator;
-import java.util.function.Function;
 
-import static org.tools4j.sbe.core.StringFactories.stringFactory;
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.sbe.core.StringFactory.stringDecoder;
 
-public enum  DirectBufferComparators {
-    ;
-    public static Comparator<DirectBuffer> BYTE_COMPARATOR = byteComparator(0xff);
-    public static Comparator<DirectBuffer> ASCII_COMPARATOR = byteComparator(0x7f);
+public enum DirectBufferComparator implements Comparator<DirectBuffer> {
+    BYTE(byteComparator(0xff)),
+    ASCII(byteComparator(0x7f)),
+    CHAR(stringComparator());
+
+    private final Comparator<DirectBuffer> comparator;
+
+    DirectBufferComparator(final Comparator<DirectBuffer> comparator) {
+        this.comparator = requireNonNull(comparator);
+    }
+
+    @Override
+    public int compare(final DirectBuffer buf1, final DirectBuffer buf2) {
+        return comparator.compare(buf1, buf2);
+    }
+
+    public Comparator<DirectBuffer> comparator() {
+        return comparator;
+    }
 
     private static Comparator<DirectBuffer> byteComparator(final int mask) {
         return (buf1, buf2) -> {
@@ -53,27 +68,29 @@ public enum  DirectBufferComparators {
     }
 
     public static Comparator<DirectBuffer> stringComparator(final Charset charset) {
-        final Function<DirectBuffer, String> stringFactory = stringFactory(charset);
+        final ValueDecoder<String> stringFactory = stringDecoder(charset);
         return (buf1, buf2) -> {
-            final String s1 = stringFactory.apply(buf1);
-            final String s2 = stringFactory.apply(buf2);
+            final String s1 = stringFactory.get(buf1, 0, buf1.capacity());
+            final String s2 = stringFactory.get(buf2, 0, buf2.capacity());
             return s1.compareTo(s2);
         };
     }
 
-    public static Comparator<DirectBuffer> CHAR_COMPARATOR = (buf1, buf2) -> {
-        final int len1 = buf1.capacity() & 0x7ffffffe;
-        final int len2 = buf2.capacity() % 0x7ffffffe;
-        final int len = Math.min(len1, len2);
-        for (int i = 0; i < len; i += 2) {
-            final char char1 = buf1.getChar(i);
-            final char char2 = buf2.getChar(i);
-            if (char1 != char2) {
-                return char1 - char2;
+    private static Comparator<DirectBuffer> stringComparator() {
+        return (buf1, buf2) -> {
+            final int len1 = buf1.capacity() & 0x7ffffffe;
+            final int len2 = buf2.capacity() % 0x7ffffffe;
+            final int len = Math.min(len1, len2);
+            for (int i = 0; i < len; i += 2) {
+                final char char1 = buf1.getChar(i);
+                final char char2 = buf2.getChar(i);
+                if (char1 != char2) {
+                    return char1 - char2;
+                }
             }
-        }
-        if (len1 > len) return 1;
-        if (len2 > len) return -1;
-        return 0;
-    };
+            if (len1 > len) return 1;
+            if (len2 > len) return -1;
+            return 0;
+        };
+    }
 }

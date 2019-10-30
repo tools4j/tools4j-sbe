@@ -23,23 +23,9 @@
  */
 package org.tools4j.sbe.core;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.sbe.EncoderFlyweight;
 
-public interface VarDataEncoder<P> {
-    P empty();
-    P put(byte[] src, int srcOffset, int length);
-    P put(DirectBuffer src, int srcOffset, int length);
-    <T> P put(T value, ValueEncoder<? super T> encoder);
-    <S> P put(S src, int srcOffset, ByteReader<? super S> reader, int length);
-
-    MutableDirectBuffer wrap(MutableDirectBuffer encoder);
-    <E extends MutableDirectView> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder, int offset);
-    <E extends MessageEncoder<?>> E wrapAndApplyHeader(E encoder);
-    P unwrap(MutableDirectView encoder);
-    P unwrap(MutableDirectBuffer encoder);
-    P unwrap(EncoderFlyweight encoder);
+@FunctionalInterface
+public interface ValueEncoder<T> {
+    int put(T value, MutableDirectBuffer buffer, int offset, int length);
 }

@@ -238,7 +238,7 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
             final int dataLength = (int)(buffer.getInt(limit, java.nio.ByteOrder.LITTLE_ENDIAN) & 0xFFFF_FFFFL);
             decoder.limit(limit + headerLength + dataLength);
             read = true;
-            return valueDecoder.lookup(buffer, limit + headerLength, dataLength);
+            return valueDecoder.get(buffer, limit + headerLength, dataLength);
         }
 
         @Override

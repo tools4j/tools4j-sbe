@@ -34,6 +34,7 @@ public interface VarDataDecoder {
     int get(MutableDirectBuffer dst, int dstOffset, int length);
     <T> T get(ValueDecoder<T> decoder);
     <D> int get(D dst, int dstOffset, ByteWriter<? super D> writer, int length);
+
     DirectBuffer wrap(DirectBuffer decoder);
     <D extends DirectView> D wrap(D decoder);
     <D extends CompositeDecoderFlyweight> D wrap(D decoder);

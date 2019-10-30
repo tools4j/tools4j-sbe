@@ -32,10 +32,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.sbe.core.DirectBufferComparators.BYTE_COMPARATOR;
+import static org.tools4j.sbe.core.DirectBufferComparator.BYTE;
 
 public class DefaultValueCache<T> implements ValueCache<T> {
 
@@ -43,24 +42,24 @@ public class DefaultValueCache<T> implements ValueCache<T> {
     private final List<T> valueData;
     private final int maxCapacity;
     private final Comparator<? super DirectBuffer> comparator;
-    private final Function<? super DirectBuffer, ? extends T> valueFactory;
+    private final ValueDecoder<? extends T> valueFactory;
     private final DirectBuffer view = new UnsafeBuffer(0, 0);
 
     public DefaultValueCache(final int initialCapacity,
-                             final Function<? super DirectBuffer, ? extends T> valueFactory) {
+                             final ValueDecoder<? extends T> valueFactory) {
         this(initialCapacity, Integer.MAX_VALUE, valueFactory);
     }
 
     public DefaultValueCache(final int initialCapacity,
                              final int maxCapacity,
-                             final Function<? super DirectBuffer, ? extends T> valueFactory) {
-        this(initialCapacity, maxCapacity, BYTE_COMPARATOR, valueFactory);
+                             final ValueDecoder<? extends T> valueFactory) {
+        this(initialCapacity, maxCapacity, BYTE.comparator(), valueFactory);
     }
 
     public DefaultValueCache(final int initialCapacity,
                              final int maxCapacity,
                              final Comparator<? super DirectBuffer> comparator,
-                             final Function<? super DirectBuffer, ? extends T> valueFactory) {
+                             final ValueDecoder<? extends T> valueFactory) {
         if (maxCapacity < 1) {
             throw new IllegalArgumentException("max capacity cannot be zero or negative: " + maxCapacity);
         }
@@ -76,7 +75,7 @@ public class DefaultValueCache<T> implements ValueCache<T> {
     }
 
     @Override
-    public T lookup(final DirectBuffer buffer, final int offset, final int length) {
+    public T get(final DirectBuffer buffer, final int offset, final int length) {
         view.wrap(buffer, offset, length);
         final int index = Collections.binarySearch(rawData, view, comparator);
         if (index >= 0) {
@@ -100,7 +99,7 @@ public class DefaultValueCache<T> implements ValueCache<T> {
 
     private T cache(final int insertIndex, final DirectBuffer view) {
         final DirectBuffer raw = copyOf(view);
-        final T value = valueFactory.apply(raw);
+        final T value = valueFactory.get(raw, 0, raw.capacity());
         if (rawData.size() < maxCapacity) {
             rawData.add(insertIndex, raw);
             valueData.add(insertIndex, value);

@@ -25,6 +25,7 @@ package org.tools4j.sbe.core;
 
 import org.agrona.DirectBuffer;
 
+@FunctionalInterface
 public interface ValueDecoder<T> {
-    T lookup(DirectBuffer buffer, int offset, int length);
+    T get(DirectBuffer buffer, int offset, int length);
 }
