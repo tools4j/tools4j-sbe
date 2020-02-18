@@ -12,6 +12,7 @@
         <type name="LocalMktDate" primitiveType="char" length="8" characterEncoding="ASCII"/>
         <type name="Qty" primitiveType="int64"/>
         <type name="Price" primitiveType="double"/>
+        <type name="Text" primitiveType="char" length="20" characterEncoding="UTF16"/>
     </types>
     <sbe:message name="ExecRpt" id="8" description="Execution Report">
         <field name="symbol" id="55" type="Symbol" semanticType="Symbol"/>
@@ -43,5 +44,8 @@
         -->
 
         <data name="data" id="30" type="varDataEncoding"/>
+    </sbe:message>
+    <sbe:message name="Test" id="999" description="Test">
+        <field name="text" id="1" type="Text"/>
     </sbe:message>
 </sbe:messageSchema>

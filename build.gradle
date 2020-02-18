@@ -1,32 +1,44 @@
+plugins {
+    id "me.champeau.gradle.jmh" version "0.2.0"
+    id "com.github.hierynomus.license-base" version "0.15.0"
+    id 'io.codearte.nexus-staging' version '0.21.1'
+}
 apply plugin: 'java'
-apply plugin: 'license'
+apply plugin: 'idea'
 apply plugin: 'jacoco'
-apply plugin: 'com.github.kt3k.coveralls'
+apply plugin: 'me.champeau.gradle.jmh'
+apply plugin: 'com.github.hierynomus.license-base'
+//apply plugin: 'com.github.kt3k.coveralls'
 
-def generatedSrcName = "generated-src"
-def generatedSrc = "$buildDir/$generatedSrcName"
+defaultTasks 'clean', 'build', 'shadowJar', 'install'
+
+def mockitoVersion = '3.2.4'
+def junitVersion = '5.5.2'
+def jmhVersion = '1.22'
+def agronaVersion = '1.1.0'
+
+def f4jGroup = 'org.fix4j'
+def f4jName = 'fix4j-sbe'
+def f4jVersion = file('version.txt').text.trim()
+
+def generatedSrc = "$buildDir/generated-src"
 def validationXsdPath = projectDir.toString() + '/src/main/resources/sbe.xsd'
 
+group = f4jGroup
+version = f4jVersion
 sourceCompatibility = 1.8
-group 'org.tools4j'
-version '1.0-SNAPSHOT'
-archivesBaseName = "tools4j-sbe"
+
+sourceSets.main.java {
+    srcDirs += generatedSrc
+}
+sourceSets.main.resources {
+//    srcDirs += generatedSrc
+    exclude '**/*.template'
+    exclude '**/codegen/**'
+}
 
 repositories {
     mavenCentral()
-}
-
-buildscript {
-	repositories {
-		mavenCentral()
-		jcenter()
-	}
-	
-	dependencies {
-        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.11.0"
-        classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.2"
-	}
 }
 
 configurations {
@@ -48,26 +60,6 @@ uploadArchives {
     }
 }
 
-task copyLicense(type: Copy) {
-    from('.')
-    into('build/resources/main/')
-    include('LICENSE.md')
-    rename('LICENSE.md', 'LICENSE.txt')
-}
-
-task copyLicenseToSrc(type: Copy) {
-    from('build/resources/main/')
-    into(generatedSrc)
-    include('LICENSE.txt')
-}
-
-sourceSets.main.java {
-    srcDirs generatedSrc, 'src/main/java'
-}
-sourceSets.main.resources {
-    exclude '**/*.template'
-}
-
 task generateCodecs(type: JavaExec) {
     main = 'uk.co.real_logic.sbe.SbeTool'
     classpath = configurations.sbeTool
@@ -82,33 +74,50 @@ task generateCodecs(type: JavaExec) {
     args = ['src/test/resources/example-schema.xml', 'src/test/resources/trading-schema.xml']
 }
 
+task copyLicense(type: Copy) {
+    from('.')
+    into('build/resources/main/')
+    include('LICENSE.md')
+    rename('LICENSE.md', 'LICENSE.txt')
+}
+task copyLicenseToSrc(type: Copy) {
+    from('build/resources/main/')
+    into('build/generated-src/')
+    include('LICENSE.txt')
+}
+
 license {
     header rootProject.file('src/main/resources/LICENSE.template')
     strictCheck true
-	include "**/*.java"
-	ext.year = Calendar.getInstance().get(Calendar.YEAR)
+    include "**/*.java"
+    ext.year = Calendar.getInstance().get(Calendar.YEAR)
 }
 
-copyLicense.dependsOn processResources
+task licenseFormatGen(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+    source = generatedSrc
+}
+
+licenseFormatGen.dependsOn generateCodecs
 copyLicenseToSrc.dependsOn copyLicense
-compileJava.dependsOn generateCodecs,licenseFormat,copyLicense,copyLicenseToSrc
+compileJava.dependsOn generateCodecs,licenseFormatGen
+processResources.dependsOn copyLicense,copyLicenseToSrc
 
 javadoc {
 	options.showFromPackage()
 	options.linkSource()
 	options.links("http://docs.oracle.com/javase/8/docs/api/")
-	options.windowTitle("${archivesBaseName} API ${version}")
-           .docTitle("${archivesBaseName} API ${version}")
+	options.windowTitle("${f4jName} API ${version}")
+           .docTitle("${f4jName} API ${version}")
 	options.overview = "src/main/resources/overview.html"
 }
 
 task javadocJar(type: Jar) {
-    classifier = 'javadoc'
+//    classifier = 'javadoc'
     from javadoc
 }
 
 task sourcesJar(type: Jar) {
-    classifier = 'sources'
+//    classifier = 'sources'
     from sourceSets.main.allSource
 }
 
@@ -154,16 +163,16 @@ if (project.hasProperty('upload')) {
                     }
 
                     pom.project {
-                        name "${archivesBaseName}"
+                        name "${f4jName}"
                         packaging 'jar'
                         // optionally artifactId can be defined here
                         description 'A user friendly implementation of the simple binary encoding standard.'
-                        url 'https://github.com/tools4j/tools4j-sbe'
+                        url 'https://github.com/fix4j/fix4j-sbe'
 
                         scm {
-                            connection 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
-                            developerConnection 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
-                            url 'https://github.com/tools4j/tools4j-sbe.git'
+                            connection 'scm:git:https://github.com/fix4j/fix4j-sbe.git'
+                            developerConnection 'scm:git:https://github.com/fix4j/fix4j-sbe.git'
+                            url 'https://github.com/fix4j/fix4j-sbe.git'
                         }
                         licenses {
                             license {
