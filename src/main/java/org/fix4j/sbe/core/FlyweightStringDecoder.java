@@ -167,4 +167,8 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
         return s.length();
     }
 
+    @Override
+    public String toString() {
+        return buffer == null ? metaData().name() + "(?)" : get();
+    }
 }

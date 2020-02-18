@@ -76,13 +76,13 @@ task generateCodecs(type: JavaExec) {
 
 task copyLicense(type: Copy) {
     from('.')
-    into('build/resources/main/')
+    into('build/resources/main/LICENSE.txt')
     include('LICENSE.md')
     rename('LICENSE.md', 'LICENSE.txt')
 }
 task copyLicenseToSrc(type: Copy) {
     from('build/resources/main/')
-    into('build/generated-src/')
+    into('build/generated-src/LICENSE.txt')
     include('LICENSE.txt')
 }
 
