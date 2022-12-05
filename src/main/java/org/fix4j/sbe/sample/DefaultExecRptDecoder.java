@@ -1,7 +1,7 @@
-/**
+/*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 fix4j-sbe, Marco Terzer, Anton Anufriev
+ * Copyright (c) 2019-2022 fix4j-sbe, Marco Terzer, Anton Anufriev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,6 @@
 package org.fix4j.sbe.sample;
 
 import org.agrona.DirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.fix4j.sbe.core.FlyweightStringDecoder.FixedLen;
 import org.fix4j.sbe.core.FlyweightStringDecoder.VarLen;
 import org.fix4j.sbe.core.StringDecoder;
@@ -39,7 +38,6 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     private final trading.ExecRptDecoder decoder = new trading.ExecRptDecoder();
     private final DefaultLegGroup legGroup = new DefaultLegGroup();
     private final DefaultRejectText rejectText = new DefaultRejectText();
-    private final DirectBuffer nullBuffer = new UnsafeBuffer(0, 0);
 
     private void cleanup() {
         legGroup.unwrap();
@@ -75,6 +73,16 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     @Override
     public int offset() {
         return decoder.offset();
+    }
+
+    @Override
+    public int limit() {
+        return decoder.limit();
+    }
+
+    @Override
+    public void limit(final int limit) {
+        decoder.limit(limit);
     }
 
     @Override
@@ -120,6 +128,16 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     @Override
     public StringDecoder rejectText() {
         return rejectText.init();
+    }
+
+    @Override
+    public StringBuilder appendTo(final StringBuilder builder) {
+        return decoder.appendTo(builder);
+    }
+
+    @Override
+    public String toString() {
+        return appendTo(new StringBuilder()).toString();
     }
 
     private class DefaultLegGroup implements Leg, Iterator<Leg> {

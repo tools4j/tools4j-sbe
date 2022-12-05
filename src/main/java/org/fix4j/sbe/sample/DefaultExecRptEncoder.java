@@ -1,7 +1,7 @@
-/**
+/*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 fix4j-sbe, Marco Terzer, Anton Anufriev
+ * Copyright (c) 2019-2022 fix4j-sbe, Marco Terzer, Anton Anufriev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -91,6 +91,16 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
     }
 
     @Override
+    public int limit() {
+        return encoder.limit();
+    }
+
+    @Override
+    public void limit(final int limit) {
+        encoder.limit(limit);
+    }
+
+    @Override
     public int sbeSchemaId() {
         return encoder.sbeSchemaId();
     }
@@ -134,6 +144,13 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
     @Override
     public RejectText<P> legGroupEmpty() {
         return legGroupStart(0).legGroupComplete();
+    }
+
+    @Override
+    public String toString() {
+        try (org.fix4j.sbe.sample.ExecRptDecoder decoder = org.fix4j.sbe.sample.ExecRptDecoder.create()) {
+            return decoder.wrap(buffer(), offset(), sbeBlockLength(), sbeSchemaVersion()).toString();
+        }
     }
 
     private class DefaultLegGroup implements Leg<P>, Iterator<Leg<P>> {
@@ -207,8 +224,9 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
 
         @Override
         public StringEncoder<Leg<P>> settlDate() {
+            //noinspection ResultOfMethodCallIgnored
             validateIndex();
-            settlDate.wrap(buffer(), encoder.limit() - legsEncoder.sbeBlockLength());
+            settlDate.wrap(buffer(), encoder.limit() - LegsEncoder.sbeBlockLength());
             return settlDate;
         }
 

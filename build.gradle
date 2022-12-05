@@ -1,32 +1,85 @@
+import com.hierynomus.gradle.license.tasks.LicenseFormat
+
+import java.time.Year
+
 plugins {
-    id "me.champeau.gradle.jmh" version "0.2.0"
-    id "com.github.hierynomus.license-base" version "0.15.0"
-    id 'io.codearte.nexus-staging' version '0.21.1'
+    id 'idea'
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'io.freefair.javadoc-links' version '6.5.1'
+    id 'com.github.hierynomus.license' version "0.16.1"
 }
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'jacoco'
-apply plugin: 'me.champeau.gradle.jmh'
-apply plugin: 'com.github.hierynomus.license-base'
-//apply plugin: 'com.github.kt3k.coveralls'
 
-defaultTasks 'clean', 'build', 'shadowJar', 'install'
+defaultTasks 'clean', 'build'
 
-def mockitoVersion = '3.2.4'
-def junitVersion = '5.5.2'
-def jmhVersion = '1.22'
-def agronaVersion = '1.1.0'
+def projGroup = 'org.fix4j'
+def projName = 'fix4j-sbe'
+def projVersion = file('version.txt').text.trim()
 
-def f4jGroup = 'org.fix4j'
-def f4jName = 'fix4j-sbe'
-def f4jVersion = file('version.txt').text.trim()
+def agronaVersion = '1.17.1'
+def sbeToolVersion = '1.27.0'
+def junitVersion = '4.13.2'
+def hdrHistogramVersion = '2.1.12'
 
 def generatedSrc = "$buildDir/generated-src"
 def validationXsdPath = projectDir.toString() + '/src/main/resources/sbe.xsd'
 
-group = f4jGroup
-version = f4jVersion
-sourceCompatibility = 1.8
+group = projGroup
+version = projVersion
+
+ext {
+    //gradle clean build publish -PossrhUsername=mterzer -PossrhPassword=xxx
+
+    isReleaseVersion = !projVersion.endsWith('-SNAPSHOT')
+    releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+    println name + " version=" + projVersion + " release=" + isReleaseVersion
+
+    if (!project.hasProperty('ossrhUsername')) {
+        ossrhUsername = ''
+    }
+
+    if (!project.hasProperty('ossrhPassword')) {
+        ossrhPassword = ''
+    }
+}
+
+def projectPom = {
+    name = "$projName"
+    packaging = 'pom'
+    description = 'User friendly implementation of the simple binary encoding standard'
+    url = 'https://github.com/tools4j/tools4j-sbe'
+
+    scm {
+        connection = 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
+        developerConnection = 'scm:git:https://github.com/tools4j/tools4j-sbe.git'
+        url = 'https://github.com/tools4j/tools4j-sbe.git'
+    }
+
+    licenses {
+        license {
+            name = 'The MIT License (MIT)'
+            url = 'https://opensource.org/licenses/MIT'
+        }
+    }
+
+    developers {
+        developer {
+            id = 'terzerm'
+            name = 'Marco Terzer'
+            email = 'terzerm@gmail.com'
+            url = 'https://github.com/terzerm'
+        }
+        developer {
+            id = 'anton-anufriev'
+            name = 'Antun Anufriev'
+            email = 'anufriev@gmail.com'
+            url = 'https://github.com/anton-anufriev'
+        }
+    }
+}
 
 sourceSets.main.java {
     srcDirs += generatedSrc
@@ -46,18 +99,10 @@ configurations {
 }
 
 dependencies {
-    compile 'org.agrona:agrona:1.0.8'
-    sbeTool 'uk.co.real-logic:sbe-tool:1.13.3'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.hdrhistogram:HdrHistogram:2.1.9'
-}
-
-uploadArchives {
-    repositories {
-       flatDir {
-           dirs 'build/repositories'
-       }
-    }
+    api "org.agrona:agrona:${agronaVersion}"
+    sbeTool "uk.co.real-logic:sbe-tool:${sbeToolVersion}"
+    testImplementation "junit:junit:${junitVersion}"
+    testImplementation "org.hdrhistogram:HdrHistogram:${hdrHistogramVersion}"
 }
 
 task generateCodecs(type: JavaExec) {
@@ -87,27 +132,30 @@ task copyLicenseToSrc(type: Copy) {
 }
 
 license {
-    header rootProject.file('src/main/resources/LICENSE.template')
+    header rootProject.file('etc/LICENSE.template')
     strictCheck true
-    include "**/*.java"
-    ext.year = Calendar.getInstance().get(Calendar.YEAR)
+    include "org/fix4j/sbe/**/*.java"
+    ext.year = Year.now().value
+    mapping {
+        java='SLASHSTAR_STYLE'
+    }
 }
 
-task licenseFormatGen(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+task licenseFormatGen(type: LicenseFormat) {
     source = generatedSrc
 }
 
 licenseFormatGen.dependsOn generateCodecs
 copyLicenseToSrc.dependsOn copyLicense
-compileJava.dependsOn generateCodecs,licenseFormatGen
+compileJava.dependsOn generateCodecs,licenseFormatGen,licenseFormat
 processResources.dependsOn copyLicense,copyLicenseToSrc
 
 javadoc {
 	options.showFromPackage()
 	options.linkSource()
 	options.links("http://docs.oracle.com/javase/8/docs/api/")
-	options.windowTitle("${f4jName} API ${version}")
-           .docTitle("${f4jName} API ${version}")
+	options.windowTitle("${projName} API ${version}")
+           .docTitle("${projName} API ${version}")
 	options.overview = "src/main/resources/overview.html"
 }
 
@@ -121,84 +169,31 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-jacocoTestReport {
-    reports {
-        xml.enabled = true // coveralls plugin depends on xml format report
-        html.enabled = true
-    }
-}
-
 artifacts {
     archives jar
     archives javadocJar
     archives sourcesJar
 }
 
-//snapshot first, then release:
-//gradle clean uploadArchives -Pupload -PossrhUsername=xxx -PossrhPassword=xxx
-if (project.hasProperty('upload')) {
-
-    allprojects {
-        apply plugin: 'signing'
-        apply plugin: 'maven'
-        apply plugin: 'io.codearte.nexus-staging'
-
-        // Signature of artifacts
-        signing {
-            sign configurations.archives
-        }
-
-        // OSSRH publication
-        uploadArchives {
-            repositories {
-                mavenDeployer {
-                    beforeDeployment {
-                        MavenDeployment deployment -> signing.signPom(deployment)
-                    }
-                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                        authentication(userName: ossrhUsername, password: ossrhPassword)
-                    }
-                    snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                        authentication(userName: ossrhUsername, password: ossrhPassword)
-                    }
-
-                    pom.project {
-                        name "${f4jName}"
-                        packaging 'jar'
-                        // optionally artifactId can be defined here
-                        description 'A user friendly implementation of the simple binary encoding standard.'
-                        url 'https://github.com/fix4j/fix4j-sbe'
-
-                        scm {
-                            connection 'scm:git:https://github.com/fix4j/fix4j-sbe.git'
-                            developerConnection 'scm:git:https://github.com/fix4j/fix4j-sbe.git'
-                            url 'https://github.com/fix4j/fix4j-sbe.git'
-                        }
-                        licenses {
-                            license {
-                                name 'MIT License'
-                                url 'http://opensource.org/licenses/MIT'
-                            }
-                        }
-
-                        developers {
-                            developer {
-                                id 'terzerm'
-                                name 'Marco Terzer'
-                            }
-                            developer {
-                                id 'anton-anufriev'
-                                name 'Anton Anufriev'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        nexusStaging {
-            username = ossrhUsername
-            password = ossrhPassword
+publishing {
+    publications {
+        fix4jSbe(MavenPublication) {
+            from components.java
+            pom(projectPom)
         }
     }
+
+    repositories {
+        maven {
+            url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = ossrhUsername
+                password = ossrhPassword
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.fix4jSbe
 }
