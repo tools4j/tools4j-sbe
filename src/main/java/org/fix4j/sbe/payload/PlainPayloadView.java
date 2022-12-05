@@ -21,17 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.payload;
 
-import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.CompositeEncoderFlyweight;
+import org.agrona.sbe.MessageEncoderFlyweight;
 
-import java.nio.ByteBuffer;
+/**
+ * The plain standard SBE payload view with direct access to header and message encoder.
+ *
+ * @see PlainPayloadViewProvider
+ */
+public interface PlainPayloadView extends AutoCloseable {
 
-@FunctionalInterface
-public interface ByteWriter<D> {
-    void write(D dst, int index, int end, byte value);
+    CompositeEncoderFlyweight header();
+    MessageEncoderFlyweight message();
 
-    ByteWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putByte(index, value);
-    ByteWriter<ByteBuffer> BYTE_BUFFER_WRITER = (dest, index, end, value) -> dest.put(index, value);
-    ByteWriter<byte[]> BYTE_ARRAY_WRITER = (dest, index, end, value) -> dest[index] = value;
+    @Override
+    void close();
+
+    static PayloadViewProvider<PlainPayloadView> provider() {
+        return new PlainPayloadViewProvider();
+    }
 }

@@ -28,4 +28,8 @@ import org.agrona.DirectBuffer;
 @FunctionalInterface
 public interface ValueDecoder<T> {
     T get(DirectBuffer buffer, int offset, int length);
+
+    default boolean trailingZeros() {
+        return false;
+    }
 }

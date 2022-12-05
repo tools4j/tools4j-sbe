@@ -2,6 +2,9 @@ package org.fix4j.sbe.core;
 
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.bytes.ByteReader;
+import org.fix4j.sbe.bytes.CharReader;
 
 import java.nio.charset.Charset;
 import java.util.function.IntFunction;

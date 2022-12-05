@@ -21,15 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.cache;
 
 import org.agrona.DirectBuffer;
+import org.fix4j.sbe.core.ValueDecoder;
 
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
 import static java.util.Objects.requireNonNull;
-import static org.fix4j.sbe.core.StringFactory.stringDecoder;
+import static org.fix4j.sbe.cache.StringFactory.stringDecoder;
 
 public enum DirectBufferComparator implements Comparator<DirectBuffer> {
     BYTE(byteComparator(0xff)),
@@ -78,8 +79,8 @@ public enum DirectBufferComparator implements Comparator<DirectBuffer> {
 
     private static Comparator<DirectBuffer> stringComparator() {
         return (buf1, buf2) -> {
-            final int len1 = buf1.capacity() & 0x7ffffffe;
-            final int len2 = buf2.capacity() % 0x7ffffffe;
+            final int len1 = buf1.capacity();
+            final int len2 = buf2.capacity();
             final int len = Math.min(len1, len2);
             for (int i = 0; i < len; i += 2) {
                 final char char1 = buf1.getChar(i);

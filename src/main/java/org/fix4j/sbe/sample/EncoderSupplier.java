@@ -21,28 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.sbe.EncoderFlyweight;
-import org.fix4j.sbe.meta.MetaData;
-import org.fix4j.sbe.bytes.ByteReader;
+import org.fix4j.sbe.payload.PayloadViewProvider;
+import org.fix4j.sbe.payload.StandardPayloadView;
 
-public interface DataEncoder<P> {
-    MetaData.VarData metaData();
-    P empty();
-    P put(byte[] src, int srcOffset, int length);
-    P put(DirectBuffer src, int srcOffset, int length);
-    <T> P put(T value, ValueEncoder<? super T> encoder);
-    <S> P put(S src, int srcOffset, ByteReader<? super S> reader, int length);
+public interface EncoderSupplier<T> {
+    ExecRptEncoder<T> execRpt();
 
-    MutableDirectBuffer wrap(MutableDirectBuffer encoder);
-    <E extends MutableDirectView> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder, int offset);
-    <E extends MessageEncoder<?>> E wrapAndApplyHeader(E encoder);
-    P unwrap(MutableDirectView encoder);
-    P unwrap(MutableDirectBuffer encoder);
-    P unwrap(EncoderFlyweight encoder);
+    static EncoderSupplier<StandardPayloadView> supplier(final MutableDirectBuffer buffer,
+                                                         final int offset) {
+        final ExecRptEncoder<StandardPayloadView> encoder = ExecRptEncoder.create();
+        return () -> encoder.wrapAndApplyHeader(buffer, offset);
+    }
+
+    static <P> EncoderSupplier<P> supplier(final MutableDirectBuffer buffer,
+                                           final int offset,
+                                           final PayloadViewProvider<P> pap) {
+        final ExecRptEncoder<P> encoder = ExecRptEncoder.create(pap);
+        return () -> encoder.wrapAndApplyHeader(buffer, offset);
+    }
 }

@@ -21,27 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.bytes;
 
-public interface ExecRptDecoder extends MessageDecoder<ExecRptDecoder> {
-    static ExecRptDecoder create() {
-        return new DefaultExecRptDecoder();
-    }
+import org.agrona.DirectBuffer;
 
-    String symbol();
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
-    LegGroup legs();
+@FunctionalInterface
+public interface CharReader<S> {
+    char read(S source, int index);
 
-    StringDecoder rejectText();
-
-    interface LegGroup extends Iterable<Leg> {
-        int count();
-        Leg next();
-    }
-
-    interface Leg extends LegGroup {
-        StringDecoder settlDate();
-        long quantity();
-        double price();
-    }
+    CharReader<DirectBuffer> DIRECT_BUFFER_READER = DirectBuffer::getChar;
+    CharReader<DirectBuffer> DIRECT_BUFFER_READER_ASCII = (source, index) -> (char) source.getByte(index);
+    CharReader<ByteBuffer> BYTE_BUFFER_READER = ByteBuffer::getChar;
+    CharReader<ByteBuffer> BYTE_BUFFER_READER_ASCII = (source, index) -> (char)source.get(index);
+    CharReader<CharBuffer> CHAR_BUFFER_READER = CharBuffer::get;
+    CharReader<CharSequence> CHAR_SEQUENCE_READER = CharSequence::charAt;
+    CharReader<String> STRING_READER = String::charAt;
+    CharReader<byte[]> BYTE_ARRAY_ASCII_READER = (source, index) -> (char)source[index];
+    CharReader<char[]> CHAR_ARRAY_READER = (source, index) -> source[index];
 }

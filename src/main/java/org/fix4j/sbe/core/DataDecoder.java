@@ -27,6 +27,8 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.sbe.CompositeDecoderFlyweight;
 import org.agrona.sbe.MessageDecoderFlyweight;
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.bytes.ByteWriter;
 
 public interface DataDecoder {
     MetaData.VarData metaData();

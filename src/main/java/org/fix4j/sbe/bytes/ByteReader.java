@@ -21,16 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.bytes;
 
-public interface EnvelopeDecoder extends MessageDecoder<EnvelopeDecoder> {
-//    static EnvelopeDecoder create() {
-//        return new DefaultEnvelopeDecoder();
-//    }
+import org.agrona.DirectBuffer;
 
-    long time();
-    long seqNo();
+import java.nio.ByteBuffer;
 
-    DataDecoder data();
+@FunctionalInterface
+public interface ByteReader<S> {
+    byte read(S source, int index);
 
+    ByteReader<DirectBuffer> DIRECT_BUFFER_READER = DirectBuffer::getByte;
+    ByteReader<ByteBuffer> BYTE_BUFFER_READER = ByteBuffer::get;
+    ByteReader<byte[]> BYTE_ARRAY_READER = (source, index) -> source[index];
 }

@@ -21,17 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.cache;
 
-import org.agrona.DirectBuffer;
+import org.fix4j.sbe.core.ValueDecoder;
 
-import java.nio.ByteBuffer;
+public interface ValueCache<T> extends ValueDecoder<T> {
 
-@FunctionalInterface
-public interface ByteReader<S> {
-    byte read(S source, int index);
+    int size();
 
-    ByteReader<DirectBuffer> DIRECT_BUFFER_READER = DirectBuffer::getByte;
-    ByteReader<ByteBuffer> BYTE_BUFFER_READER = ByteBuffer::get;
-    ByteReader<byte[]> BYTE_ARRAY_READER = (source, index) -> source[index];
+    void clear();
+
 }

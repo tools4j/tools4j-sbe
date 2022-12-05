@@ -21,12 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.cache;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.fix4j.sbe.core.ValueDecoder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,13 +77,16 @@ public class DefaultValueCache<T> implements ValueCache<T> {
     @Override
     public T get(final DirectBuffer buffer, final int offset, final int length) {
         view.wrap(buffer, offset, length);
-        final int index = Collections.binarySearch(rawData, view, comparator);
-        if (index >= 0) {
+        try {
+            final int index = Collections.binarySearch(rawData, view, comparator);
+            if (index >= 0) {
+                return valueData.get(index);
+            }
+            final int insertIndex = -(index + 1);
+            return cache(insertIndex, view);
+        } finally {
             view.wrap(0, 0);
-            return valueData.get(index);
         }
-        final int insertIndex = -(index + 1);
-        return cache(insertIndex, view);
     }
 
     @Override
@@ -107,7 +111,6 @@ public class DefaultValueCache<T> implements ValueCache<T> {
             rawData.set(setIndex, raw);
             valueData.set(setIndex, value);
         }
-        view.wrap(0, 0);
         return value;
     }
 

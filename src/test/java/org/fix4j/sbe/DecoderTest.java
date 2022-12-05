@@ -25,23 +25,23 @@ package org.fix4j.sbe;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.fix4j.sbe.core.DecoderSupplier;
-import org.fix4j.sbe.core.EncoderSupplier;
-import org.fix4j.sbe.core.ExecRptDecoder;
-import org.fix4j.sbe.core.StandardPayloadAccess;
+import org.fix4j.sbe.sample.DecoderSupplier;
+import org.fix4j.sbe.sample.EncoderSupplier;
+import org.fix4j.sbe.sample.ExecRptDecoder;
+import org.fix4j.sbe.payload.StandardPayloadView;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.fix4j.sbe.core.CharWriter.STRING_BUILDER_WRITER;
+import static org.fix4j.sbe.bytes.CharWriter.STRING_BUILDER_WRITER;
 
 public class DecoderTest {
 
-    private StandardPayloadAccess payload;
+    private StandardPayloadView payload;
 
     @Before
     public void encode() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+        final EncoderSupplier<StandardPayloadView> encoders = EncoderSupplier.supplier(buffer, 0);
 
         payload = encoders.execRpt()
                 .symbol("AUDUSD")

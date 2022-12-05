@@ -21,12 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
 import org.agrona.DirectBuffer;
+import org.fix4j.sbe.payload.StandardPayloadView;
 
 public interface DecoderSupplier {
-    default ExecRptDecoder execRpt(StandardPayloadAccess standardPayloadAccess) {
+    default ExecRptDecoder execRpt(StandardPayloadView standardPayloadAccess) {
         return execRpt(
                 standardPayloadAccess.buffer(),
                 standardPayloadAccess.offset() + standardPayloadAccess.headerLength(),

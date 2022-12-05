@@ -1,4 +1,4 @@
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.meta;
 
 import static java.util.Objects.requireNonNull;
 

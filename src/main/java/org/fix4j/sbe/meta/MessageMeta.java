@@ -1,4 +1,4 @@
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.meta;
 
 public interface MessageMeta {
     Block block();

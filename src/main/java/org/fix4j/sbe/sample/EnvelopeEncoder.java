@@ -21,24 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
-import org.agrona.DirectBuffer;
+import org.fix4j.sbe.core.DataEncoder;
+import org.fix4j.sbe.core.MessageEncoder;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
 
-@FunctionalInterface
-public interface CharReader<S> {
-    char read(S source, int index);
+//    static EnvelopeEncoder<StandardPayloadAccess> create() {
+//        return create(new DefaultStandardPayloadAccess());
+//    }
+//
+//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
+//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
+//    }
 
-    CharReader<DirectBuffer> DIRECT_BUFFER_READER = DirectBuffer::getChar;
-    CharReader<DirectBuffer> DIRECT_BUFFER_READER_ASCII = (source, index) -> (char) source.getByte(index);
-    CharReader<ByteBuffer> BYTE_BUFFER_READER = ByteBuffer::getChar;
-    CharReader<ByteBuffer> BYTE_BUFFER_READER_ASCII = (source, index) -> (char)source.get(index);
-    CharReader<CharBuffer> CHAR_BUFFER_READER = CharBuffer::get;
-    CharReader<CharSequence> CHAR_SEQUENCE_READER = CharSequence::charAt;
-    CharReader<String> STRING_READER = String::charAt;
-    CharReader<byte[]> BYTE_ARRAY_ASCII_READER = (source, index) -> (char)source[index];
-    CharReader<char[]> CHAR_ARRAY_READER = (source, index) -> source[index];
+    EnvelopeEncoder<P> time(long time);
+    EnvelopeEncoder<P> seqNo(long seqNo);
+
+    DataEncoder<P> data();
+
 }

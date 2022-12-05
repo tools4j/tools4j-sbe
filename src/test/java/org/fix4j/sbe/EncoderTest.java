@@ -27,7 +27,11 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.sbe.CompositeEncoderFlyweight;
 import org.agrona.sbe.MessageEncoderFlyweight;
-import org.fix4j.sbe.core.*;
+import org.fix4j.sbe.bytes.CharReader;
+import org.fix4j.sbe.sample.EncoderSupplier;
+import org.fix4j.sbe.sample.ExecRptEncoder;
+import org.fix4j.sbe.payload.PayloadViewProvider;
+import org.fix4j.sbe.payload.StandardPayloadView;
 import org.junit.Test;
 
 public class EncoderTest {
@@ -36,7 +40,7 @@ public class EncoderTest {
         void route();
     }
 
-    final class Printer implements Router, PayloadAccessProvider<Router> {
+    final class Printer implements Router, PayloadViewProvider<Router> {
         private CompositeEncoderFlyweight header;
         private MessageEncoderFlyweight message;
 
@@ -58,9 +62,9 @@ public class EncoderTest {
     @Test
     public void encodeStandardPayload() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+        final EncoderSupplier<StandardPayloadView> encoders = EncoderSupplier.supplier(buffer, 0);
 
-        StandardPayloadAccess payload = encoders.execRpt()
+        StandardPayloadView payload = encoders.execRpt()
                 .symbol("AUDUSD")
                 .legGroupStart(2)
                     .next().quantity(100000).price(1.23).settlDate().put("20191010")
@@ -111,7 +115,7 @@ public class EncoderTest {
     @Test(expected = IllegalStateException.class)
     public void legGroupIncomplete() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+        final EncoderSupplier<StandardPayloadView> encoders = EncoderSupplier.supplier(buffer, 0);
 
         encoders.execRpt()
                 .symbol("AUDUSD")
@@ -122,7 +126,7 @@ public class EncoderTest {
     @Test(expected = IllegalStateException.class)
     public void legGroupStartAferComplete() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+        final EncoderSupplier<StandardPayloadView> encoders = EncoderSupplier.supplier(buffer, 0);
 
         final ExecRptEncoder<?> rpt = encoders.execRpt();
         rpt
@@ -137,7 +141,7 @@ public class EncoderTest {
     @Test(expected = IllegalStateException.class)
     public void rejecctTextBeforeLegGroupComplete() {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final EncoderSupplier<StandardPayloadAccess> encoders = EncoderSupplier.supplier(buffer, 0);
+        final EncoderSupplier<StandardPayloadView> encoders = EncoderSupplier.supplier(buffer, 0);
 
         final ExecRptEncoder.RejectText<?> rejectText = encoders.execRpt()
                 .symbol("AUDUSD")

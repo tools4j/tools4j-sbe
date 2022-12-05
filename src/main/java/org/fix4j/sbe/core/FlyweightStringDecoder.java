@@ -1,6 +1,9 @@
 package org.fix4j.sbe.core;
 
 import org.agrona.DirectBuffer;
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.bytes.ByteWriter;
+import org.fix4j.sbe.bytes.CharWriter;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -32,6 +35,16 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
         }
 
         @Override
+        public int dataLength() {
+            final int offset = dataOffset();
+            int length = length();
+            while (length > 0 && buffer().getByte(offset + length - 1) == 0) {
+                length--;
+            }
+            return length;
+        }
+
+        @Override
         public int length() {
             return metaData.length();
         }
@@ -56,8 +69,13 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
         }
 
         @Override
-        public int length() {
+        public int dataLength() {
             return buffer().getInt(offset(), LITTLE_ENDIAN);
+        }
+
+        @Override
+        public int length() {
+            return dataLength();
         }
     }
 
@@ -75,21 +93,21 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
     }
 
     abstract public int dataOffset();
+    abstract public int dataLength();
 
     @Override
     public String get() {
         final int off = dataOffset();
-        final int len = length();
+        final int len = dataLength();
         final byte[] bytes = new byte[len];
         buffer.getBytes(off, bytes, 0, len);
-        int end = 0;
-        while (end < len && bytes[end] != 0) end++;
-        return new String(bytes, 0, end, Charset.forName(metaData().characterEncoding()));
+        return new String(bytes, Charset.forName(metaData().characterEncoding()));
     }
 
     @Override
     public <T> T get(final ValueDecoder<T> decoder) {
-        return decoder.get(buffer, dataOffset(), length());
+        final int length = decoder.trailingZeros() ? length() : dataLength();
+        return decoder.get(buffer, dataOffset(), length);
     }
 
     @Override
@@ -130,7 +148,7 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
         if ("ASCII".equals(metaData().characterEncoding())) {
             final DirectBuffer buffer = buffer();
             final int off = dataOffset();
-            final int len = length();
+            final int len = dataLength();
             for (int i = 0; i < len; i++) {
                 final byte b = buffer.getByte(off + i);
                 try {
@@ -155,7 +173,7 @@ abstract public class FlyweightStringDecoder implements StringDecoder {
         if ("ASCII".equals(metaData().characterEncoding())) {
             final DirectBuffer buffer = buffer();
             final int off = dataOffset();
-            final int len = length();
+            final int len = dataLength();
             for (int i = 0; i < len; i++) {
                 final byte b = buffer.getByte(off + i);
                 stringBuilder.append((char) b);

@@ -21,24 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.payload;
 
 import org.agrona.sbe.CompositeEncoderFlyweight;
 import org.agrona.sbe.MessageEncoderFlyweight;
 
-/**
- * Provides access to the payload after encoding an SBE message.
- *
- * @param <P> Access to the SBE payload
- */
-@FunctionalInterface
-public interface PayloadAccessProvider<P> {
-    /**
-     * Returns access to the SBE payload after encoding SBE message.
-     *
-     * @param header the header encoder if any, or null if no header was applied
-     * @param message the message encoder
-     * @return the payload access object
-     */
-    P payload(CompositeEncoderFlyweight header, MessageEncoderFlyweight message);
+public class PlainPayloadViewProvider implements PayloadViewProvider<PlainPayloadView> {
+
+    private final View view = new View();
+
+    @Override
+    public PlainPayloadView payload(final CompositeEncoderFlyweight header, final MessageEncoderFlyweight message) {
+        return view.init(header, message);
+    }
+
+    private static final class View implements PlainPayloadView {
+        private CompositeEncoderFlyweight header;
+        private MessageEncoderFlyweight message;
+
+        View init(final CompositeEncoderFlyweight header, final MessageEncoderFlyweight message) {
+            if (header != null && message != null && header.buffer() != message.buffer()) {
+                throw new IllegalArgumentException("header and message must use the same buffer instance");
+            }
+            this.header = header;
+            this.message = message;
+            return this;
+        }
+
+        @Override
+        public CompositeEncoderFlyweight header() {
+            return header;
+        }
+
+        @Override
+        public MessageEncoderFlyweight message() {
+            return message;
+        }
+
+        @Override
+        public void close() {
+            header = null;
+            message = null;
+        }
+    }
 }

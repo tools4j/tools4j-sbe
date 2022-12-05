@@ -21,23 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
-import org.agrona.MutableDirectBuffer;
+import org.fix4j.sbe.core.DataDecoder;
+import org.fix4j.sbe.core.MessageDecoder;
 
-public interface EncoderSupplier<T> {
-    ExecRptEncoder<T> execRpt();
+public interface EnvelopeDecoder extends MessageDecoder<EnvelopeDecoder> {
+//    static EnvelopeDecoder create() {
+//        return new DefaultEnvelopeDecoder();
+//    }
 
-    static EncoderSupplier<StandardPayloadAccess> supplier(final MutableDirectBuffer buffer,
-                                                           final int offset) {
-        final ExecRptEncoder<StandardPayloadAccess> encoder = ExecRptEncoder.create();
-        return () -> encoder.wrapAndApplyHeader(buffer, offset);
-    }
+    long time();
+    long seqNo();
 
-    static <P> EncoderSupplier<P> supplier(final MutableDirectBuffer buffer,
-                                           final int offset,
-                                           final PayloadAccessProvider<P> pap) {
-        final ExecRptEncoder<P> encoder = ExecRptEncoder.create(pap);
-        return () -> encoder.wrapAndApplyHeader(buffer, offset);
-    }
+    DataDecoder data();
+
 }

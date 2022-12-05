@@ -21,10 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.fix4j.sbe.core.FlyweightStringDecoder.FixedLen;
+import org.fix4j.sbe.core.FlyweightStringDecoder.VarLen;
+import org.fix4j.sbe.core.StringDecoder;
+import org.fix4j.sbe.meta.DefaultMetaData;
+import org.fix4j.sbe.meta.MetaData;
 import trading.ExecRptDecoder.LegsDecoder;
 
 import java.util.Iterator;
@@ -118,7 +123,7 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     }
 
     private class DefaultLegGroup implements Leg, Iterator<Leg> {
-        final FlyweightStringDecoder.FixedLen settlDate = new FlyweightStringDecoder.FixedLen(
+        final FixedLen settlDate = new FixedLen(
                 new DefaultMetaData.DefaultChar("settlDate", LegsDecoder.settlDateId(),
                         LegsDecoder.settlDateEncodingOffset(), LegsDecoder.settlDateLength(),
                         LegsDecoder.settlDateCharacterEncoding()));
@@ -200,7 +205,7 @@ public class DefaultExecRptDecoder implements ExecRptDecoder {
     }
 
     private class DefaultRejectText implements MetaData.VarChar {
-        final FlyweightStringDecoder.VarLen str = new FlyweightStringDecoder.VarLen(this);
+        final VarLen str = new VarLen(this);
         StringDecoder.VarLen init() {
             if (str.buffer() == null) {
                 legGroup.skip();

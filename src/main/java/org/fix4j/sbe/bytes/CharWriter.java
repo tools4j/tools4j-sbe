@@ -21,28 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.bytes;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.sbe.EncoderFlyweight;
-import org.fix4j.sbe.meta.MetaData;
-import org.fix4j.sbe.bytes.ByteReader;
 
-public interface DataEncoder<P> {
-    MetaData.VarData metaData();
-    P empty();
-    P put(byte[] src, int srcOffset, int length);
-    P put(DirectBuffer src, int srcOffset, int length);
-    <T> P put(T value, ValueEncoder<? super T> encoder);
-    <S> P put(S src, int srcOffset, ByteReader<? super S> reader, int length);
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
-    MutableDirectBuffer wrap(MutableDirectBuffer encoder);
-    <E extends MutableDirectView> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder);
-    <E extends EncoderFlyweight> E wrap(E encoder, int offset);
-    <E extends MessageEncoder<?>> E wrapAndApplyHeader(E encoder);
-    P unwrap(MutableDirectView encoder);
-    P unwrap(MutableDirectBuffer encoder);
-    P unwrap(EncoderFlyweight encoder);
+@FunctionalInterface
+public interface CharWriter<D> {
+    void write(D dest, int index, int end, char value);
+
+    CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putChar(index, value);
+    CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER_ASCII = (dest, index, end, value) -> dest.putByte(index, (byte)value);
+    CharWriter<ByteBuffer> BYTE_BUFFER_WRITER = (dest, index, end, value) -> dest.putChar(index, value);
+    CharWriter<ByteBuffer> BYTE_BUFFER_WRITER_ASCII = (dest, index, end, value) -> dest.put(index, (byte)value);
+    CharWriter<CharBuffer> CHAR_BUFFER_WRITER = (dest, index, end, value) -> dest.put(index, value);
+    CharWriter<StringBuilder> STRING_BUILDER_WRITER = (dest, index, end, value) -> {
+        dest.setLength(end);
+        dest.setCharAt(index, value);
+    };
+    CharWriter<byte[]> BYTE_ARRAY_ASCII_WRITER = (dest, index, end, value) -> dest[index] = (byte)value;
+    CharWriter<char[]> CHAR_ARRAY_WRITER = (dest, index, end, value) -> dest[index] = value;
 }

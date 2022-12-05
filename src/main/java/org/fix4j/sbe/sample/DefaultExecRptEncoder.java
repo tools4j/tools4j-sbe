@@ -21,10 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.fix4j.sbe.core.FlyweightStringEncoder.FixedLen;
+import org.fix4j.sbe.core.StringEncoder;
+import org.fix4j.sbe.core.ValueEncoder;
+import org.fix4j.sbe.meta.DefaultMetaData;
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.payload.PayloadViewProvider;
+import org.fix4j.sbe.bytes.ByteReader;
+import org.fix4j.sbe.bytes.CharReader;
 import trading.ExecRptDecoder;
 import trading.ExecRptEncoder.LegsEncoder;
 import trading.MessageHeaderEncoder;
@@ -36,13 +44,13 @@ import static java.util.Objects.requireNonNull;
 
 public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
 
-    private final PayloadAccessProvider<? extends P> payloadAccessProvider;
+    private final PayloadViewProvider<? extends P> payloadAccessProvider;
     private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
     private final trading.ExecRptEncoder encoder = new trading.ExecRptEncoder();
     private final DefaultLegGroup legGroup = new DefaultLegGroup();
     private final DefaultRejectText rejectText = new DefaultRejectText();
 
-    public DefaultExecRptEncoder(final PayloadAccessProvider<? extends P> payloadAccessProvider) {
+    public DefaultExecRptEncoder(final PayloadViewProvider<? extends P> payloadAccessProvider) {
         this.payloadAccessProvider = requireNonNull(payloadAccessProvider);
     }
 
@@ -129,7 +137,7 @@ public class DefaultExecRptEncoder<P> implements ExecRptEncoder<P> {
     }
 
     private class DefaultLegGroup implements Leg<P>, Iterator<Leg<P>> {
-        final FlyweightStringEncoder.FixedLen<Leg<P>> settlDate = new FlyweightStringEncoder.FixedLen<>(
+        final FixedLen<Leg<P>> settlDate = new FixedLen<Leg<P>>(
                 new DefaultMetaData.DefaultChar("settlDate", LegsEncoder.settlDateId(),
                         LegsEncoder.settlDateEncodingOffset(), LegsEncoder.settlDateLength(),
                         LegsEncoder.settlDateCharacterEncoding()),

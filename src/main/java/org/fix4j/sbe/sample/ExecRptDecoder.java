@@ -21,26 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
-import org.agrona.MutableDirectBuffer;
+import org.fix4j.sbe.core.MessageDecoder;
+import org.fix4j.sbe.core.StringDecoder;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+public interface ExecRptDecoder extends MessageDecoder<ExecRptDecoder> {
+    static ExecRptDecoder create() {
+        return new DefaultExecRptDecoder();
+    }
 
-@FunctionalInterface
-public interface CharWriter<D> {
-    void write(D dest, int index, int end, char value);
+    String symbol();
 
-    CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putChar(index, value);
-    CharWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER_ASCII = (dest, index, end, value) -> dest.putByte(index, (byte)value);
-    CharWriter<ByteBuffer> BYTE_BUFFER_WRITER = (dest, index, end, value) -> dest.putChar(index, value);
-    CharWriter<ByteBuffer> BYTE_BUFFER_WRITER_ASCII = (dest, index, end, value) -> dest.put(index, (byte)value);
-    CharWriter<CharBuffer> CHAR_BUFFER_WRITER = (dest, index, end, value) -> dest.put(index, value);
-    CharWriter<StringBuilder> STRING_BUILDER_WRITER = (dest, index, end, value) -> {
-        dest.setLength(end);
-        dest.setCharAt(index, value);
-    };
-    CharWriter<byte[]> BYTE_ARRAY_ASCII_WRITER = (dest, index, end, value) -> dest[index] = (byte)value;
-    CharWriter<char[]> CHAR_ARRAY_WRITER = (dest, index, end, value) -> dest[index] = value;
+    LegGroup legs();
+
+    StringDecoder rejectText();
+
+    interface LegGroup extends Iterable<Leg> {
+        int count();
+        Leg next();
+    }
+
+    interface Leg extends LegGroup {
+        StringDecoder settlDate();
+        long quantity();
+        double price();
+    }
 }

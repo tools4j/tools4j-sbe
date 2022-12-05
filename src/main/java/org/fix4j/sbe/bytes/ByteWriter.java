@@ -21,12 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.bytes;
 
-public interface ValueCache<T> extends ValueDecoder<T> {
+import org.agrona.MutableDirectBuffer;
 
-    int size();
+import java.nio.ByteBuffer;
 
-    void clear();
+@FunctionalInterface
+public interface ByteWriter<D> {
+    void write(D dst, int index, int end, byte value);
 
+    ByteWriter<MutableDirectBuffer> DIRECT_BUFFER_WRITER = (dest, index, end, value) -> dest.putByte(index, value);
+    ByteWriter<ByteBuffer> BYTE_BUFFER_WRITER = (dest, index, end, value) -> dest.put(index, value);
+    ByteWriter<byte[]> BYTE_ARRAY_WRITER = (dest, index, end, value) -> dest[index] = value;
 }

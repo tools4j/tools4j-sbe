@@ -23,6 +23,10 @@
  */
 package org.fix4j.sbe.core;
 
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.bytes.ByteWriter;
+import org.fix4j.sbe.bytes.CharWriter;
+
 public interface StringDecoder {
     MetaData.CharEncoded metaData();
     int length();

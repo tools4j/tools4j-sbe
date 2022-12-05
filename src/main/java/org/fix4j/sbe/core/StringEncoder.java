@@ -23,6 +23,10 @@
  */
 package org.fix4j.sbe.core;
 
+import org.fix4j.sbe.meta.MetaData;
+import org.fix4j.sbe.bytes.ByteReader;
+import org.fix4j.sbe.bytes.CharReader;
+
 public interface StringEncoder<P> {
     MetaData.CharEncoded metaData();
     P empty();

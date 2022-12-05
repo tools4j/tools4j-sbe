@@ -28,7 +28,7 @@ import org.agrona.DirectBuffer;
 @FunctionalInterface
 public interface DirectView {
     /**
-     * Attach a view to a {@link DirectBuffer} for providing direct access.
+     * Attach this view to a {@link DirectBuffer} for providing direct access.
      *
      * @param buffer to which the view is attached.
      * @param offset at which the view begins.

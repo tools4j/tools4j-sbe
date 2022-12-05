@@ -21,11 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.payload;
 
 import org.agrona.MutableDirectBuffer;
 
-public interface StandardPayloadAccess extends AutoCloseable {
+/**
+ * The conventional standard SBE payload view.
+ *
+ * @see StandardPayloadViewProvider
+ */
+public interface StandardPayloadView extends AutoCloseable {
     /**
      * The SBE Schema identifier containing the message declaration.
      *
@@ -71,7 +76,7 @@ public interface StandardPayloadAccess extends AutoCloseable {
     @Override
     void close();
 
-    static PayloadAccessProvider<StandardPayloadAccess> provider() {
-        return new DefaultStandardPayloadAccess();
+    static PayloadViewProvider<StandardPayloadView> provider() {
+        return new StandardPayloadViewProvider();
     }
 }

@@ -21,21 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.sample;
 
-public interface EnvelopeEncoder<P> extends MessageEncoder<EnvelopeEncoder<P>> {
+import org.fix4j.sbe.core.MessageEncoder;
+import org.fix4j.sbe.core.StringEncoder;
+import org.fix4j.sbe.payload.PayloadViewProvider;
+import org.fix4j.sbe.payload.StandardPayloadView;
+import org.fix4j.sbe.payload.StandardPayloadViewProvider;
 
-//    static EnvelopeEncoder<StandardPayloadAccess> create() {
-//        return create(new DefaultStandardPayloadAccess());
-//    }
-//
-//    static <P> EnvelopeEncoder<P> create(PayloadAccessProvider<? extends P> payloadAccessProvider) {
-//        return new DefaultEnvelopeEncoder<>(payloadAccessProvider);
-//    }
+public interface ExecRptEncoder<P> extends MessageEncoder<ExecRptEncoder<P>> {
 
-    EnvelopeEncoder<P> time(long time);
-    EnvelopeEncoder<P> seqNo(long seqNo);
+    static ExecRptEncoder<StandardPayloadView> create() {
+        return create(new StandardPayloadViewProvider());
+    }
 
-    DataEncoder<P> data();
+    static <P> ExecRptEncoder<P> create(PayloadViewProvider<? extends P> payloadAccessProvider) {
+        return new DefaultExecRptEncoder<>(payloadAccessProvider);
+    }
 
+    ExecRptEncoder<P> symbol(String symbol);
+    LegGroup<P> legGroupStart(int count);
+    RejectText<P> legGroupEmpty();
+
+    interface LegGroup<P> extends Iterable<Leg<P>> {
+        Leg<P> next();
+        RejectText<P> legGroupComplete();
+    }
+
+    interface Leg<P> extends LegGroup<P> {
+        StringEncoder<Leg<P>> settlDate();
+        Leg<P> quantity(long quantity);
+        Leg<P> price(double price);
+    }
+
+    interface RejectText<P> {
+        StringEncoder<P> rejectText();
+    }
 }

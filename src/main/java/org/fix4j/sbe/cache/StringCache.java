@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.fix4j.sbe.core;
+package org.fix4j.sbe.cache;
 
 import org.agrona.DirectBuffer;
+import org.fix4j.sbe.core.ValueDecoder;
 
 import java.nio.charset.Charset;
 
